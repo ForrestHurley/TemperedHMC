@@ -2,6 +2,7 @@
 #define MARKOV_CHAIN_MONTE_CARLO_INL
 
 #include "model.inl"
+#include <random>
 
 template<class ParamaterType>
 class MarkovChainMonteCarlo<ParameterType>
@@ -11,6 +12,15 @@ private:
   std::vector<ParameterType> parameter_history;
 protected:
   const Model& model;
+
+  static double getRandomUniform()
+  {
+    static thread_local std::random_device device;
+    static thread_local std::mt19937_64 generator(device());
+    static thread_local std::uniform_real_distribution<double> uniform(0., 1.);
+
+    return uniform(generator);
+  }
 
 public:
   explicit MarkovChainMonteCarlo(const Model& model) : model(model) {}
@@ -46,6 +56,7 @@ public:
     
     return out;
   }
+
 };
 
 #endif

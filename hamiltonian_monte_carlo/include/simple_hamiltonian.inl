@@ -12,6 +12,10 @@ private:
   unsigned int path_length;
   ParameterType parameter_masses;
 
+protected:
+  
+  virtual double KineticEnergy(const ParameterType& momentum) const override;
+
 public:
   explicit SimpleHamiltonian(
     const Model& model,
@@ -44,6 +48,12 @@ public:
 
   virtual ParameterType RandomMomentum() const override;
 };
+
+double KineticEnergy(const ParameterType& momentum) const
+{
+  const ParameterType dimension_energy = momentum * momentum / ( 2 * parameter_masses);
+  return dimension_energy.Sum();
+}
 
 template<class ParameterType>
 void SimpleHamiltonian<ParameterType>::IntegratePath(

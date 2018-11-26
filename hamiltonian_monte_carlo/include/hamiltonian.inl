@@ -13,17 +13,17 @@ protected:
   virtual void IntegratePath(
     ParameterType parameters&,
     ParameterType momenta&) const = 0;
-  virtual ParameterType RandomMomentum() const = 0;
 
 public:
   explicit Hamiltonian(const Model& model) : model(model) {}
   virtual ~Hamiltonian() {}
 
-  void GenerateStep(ParameterType& parameter) const
+  void GenerateStep(ParameterType& parameter, ParameterType& momentum) const
   {
-    ParameterType momentum = RandomMomentum();
     IntegratePath(parameter, momentum);
   }
+
+  virtual ParameterType RandomMomentum() const = 0;
 
 };
 

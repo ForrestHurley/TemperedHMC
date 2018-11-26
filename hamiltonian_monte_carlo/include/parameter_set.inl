@@ -80,6 +80,14 @@ public:
     return *this;
   }
 
+  double Sum() const
+  {
+    double sum = 0.;
+    for (double value : parameters)
+      sum += value;
+    return sum;
+  }
+  
 };
 
 #endif
