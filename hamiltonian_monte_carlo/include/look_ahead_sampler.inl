@@ -2,6 +2,7 @@
 #define LOOK_AHEAD_SAMPLER_INL
 
 #include "hamiltonian_monte_carlo.inl"
+#include <algorithm>
 
 template<class ParameterType>
 class LookAheadSampler<ParameterType> : public HamiltonianMonteCarlo<ParameterType>
