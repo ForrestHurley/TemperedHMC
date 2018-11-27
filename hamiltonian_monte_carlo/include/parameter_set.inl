@@ -10,6 +10,11 @@ public:
   static const int dimension = N;
   std::array<double, N> parameters;
 
+  ParameterSet<N>()
+  {
+    for (int i = 0; i < N; i++)
+      parameters.at(i) = 0.;
+  }
   explicit ParameterSet<N>(double initial_values = 0.)
   {
     for (int i = 0; i < N; i++)

@@ -8,21 +8,21 @@ private:
   int energy_evaluations = 0;
   int partial_evaluations = 0;
 
-  virtual double CalculateEnergy(ParameterType parameters) const = 0;
-  virtual ParameterType CalculateEnergyPartials(ParameterType parameters) const = 0;
+  virtual double CalculateEnergy(const ParameterType& parameters) const = 0;
+  virtual ParameterType CalculateEnergyPartials(const ParameterType& parameters) const = 0;
 public:
   explicit Model() {}
   virtual ~MarkovChainMonteCarlo() {}
 
   typedef ParameterType parameter_type;
 
-  double Energy(ParameterType parameters) const 
+  double Energy(const ParameterType& parameters) const 
   {
     energy_evaluations++;
     return CalculateEnergy(parameters);
   }
 
-  ParameterType EnergyPartials(ParameterType parameters) const
+  ParameterType EnergyPartials(const ParameterType& parameters) const
   {
     partial_evaluations++;
     return CalculateEnergyPartials(parameters);
