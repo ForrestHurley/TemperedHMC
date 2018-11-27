@@ -123,14 +123,14 @@ void LookAheadSampler<ParameterType>::SimulateStep(ParameterType& parameter)
     exp(model.Energy(parameter)));
 
   ParameterType old_parameter = parameter;
+  ParameterType momentum = hamiltonian.RandomMomentum(parameter);
 
   for (int i = 0; i < maximum_proposals; i++)
   {
-    ParameterType momentum = hamiltonian.RandomMomentum();
     hamiltonian.GenerateStep(parameter, momentum);
   
     cumulative_probability += 
-      getNextProbability(exp(model.Energy(parameter)));
+      getNextProbability(exp(-hamiltonain.Energy(parameter, momentum)));
 
     if (cumulative_probability > cutoff)
       return;

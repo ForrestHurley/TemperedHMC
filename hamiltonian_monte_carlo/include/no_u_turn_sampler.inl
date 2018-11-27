@@ -64,8 +64,7 @@ NUTS<ParameterType>::TreeReturn NUTS<ParameterType>::BuildTree(
     out.right_momentum = momentum;
     out.new_parameter = parameter;
 
-    double energy = model.Energy(parameter) + 
-        static_cast<const SimpleHamiltonian&>(hamiltonian).KineticEnergy(momentum);
+    const double energy = hamiltonian.Energy(parameter, momentum);
 
     out.count = (u <= exp(-energy));
     out.safe = (u < exp(-energy + maximum_delta_energy));
@@ -124,10 +123,9 @@ NUTS<ParameterType>::TreeReturn NUTS<ParameterType>::BuildTree(
 template<class ParameterType>
 void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
 {
-  ParameterType momentum = hamiltonian.RandomMomentum();
+  ParameterType momentum = hamiltonian.RandomMomentum(parameter);
 
-  double initial_energy = model.Energy(parameter) +
-    static_cast<const SimpleHamiltonian&>(hamiltonian).KineticEnergy(momentum);
+  const double initial_energy = hamiltonian.Energy(parameter, momentum)
   double initial_probability = exp(-initial_energy);
   double u = MarkovChainMonteCarlo::getRandomUniform() * intial_probability;  
 

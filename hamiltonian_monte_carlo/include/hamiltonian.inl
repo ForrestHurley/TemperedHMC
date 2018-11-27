@@ -23,8 +23,9 @@ public:
     IntegratePath(parameter, momentum);
   }
 
-  virtual ParameterType RandomMomentum() const = 0;
+  virtual ParameterType RandomMomentum(const ParameterType& parameter) const = 0;
 
+  virtual Energy(const ParameterType& parameter, const ParameterType& momentum) const = 0;
 };
 
 #endif

@@ -12,10 +12,6 @@ private:
   unsigned int path_length;
   ParameterType parameter_masses;
 
-protected:
-  
-  virtual double KineticEnergy(const ParameterType& momentum) const override;
-
 public:
   explicit SimpleHamiltonian(
     const Model& model,
@@ -36,7 +32,7 @@ public:
 
   void setParameterMasses(const ParameterType& new_masses) 
     { parameter_masses = new_masses; }
-  const ParameterType& getParameterMasses() const { return parameter_masses; }
+  virtual const ParameterType& getParameterMasses() const { return parameter_masses; }
 
   virtual void IntegratePath(
     ParameterType parameters&,
@@ -46,13 +42,19 @@ public:
     ParameterType parameters&, 
     ParameterType momenta&) const;
 
-  virtual ParameterType RandomMomentum() const override;
+  virtual ParameterType RandomMomentum(const ParameterType& parameter) const override;
+
+  virtual double Energy(
+      const ParameterType& parameter, 
+      const ParameterType& momentum) const override;
 };
 
-double KineticEnergy(const ParameterType& momentum) const
+double Energy(const ParameterType& parameter, const ParameterType& momentum) const
 {
-  const ParameterType dimension_energy = momentum * momentum / ( 2 * parameter_masses);
-  return dimension_energy.Sum();
+  const ParameterType dimension_energy = momentum * momentum / ( 2 * getParameterMasses());
+  const double kinetic = dimension_energy.Sum();
+  const double potential = model.Energy(parameter);
+  return kinetic + potential;
 }
 
 template<class ParameterType>
@@ -73,14 +75,14 @@ void SimpleHamiltonian<ParameterType>::LeapfrogStep(
     step_length / 2. * model.EnergyPartials(parameters);
 
   parameters +=
-    step_length * momenta / parameter_masses;
+    step_length * momenta / getParameterMasses();
 
   momenta -=
     step_length / 2. * model.EnergyPartials(parameters);
 }
 
 template<class ParameterType>
-ParameterType SimpleHamiltonian<ParameterType>::RandomMomentum() const
+ParameterType SimpleHamiltonian<ParameterType>::RandomMomentum(const ParameterType& parameter) const
 {
   static thread_local std::random_device device;
   static thread_local std::mt19937_64 generator(device());

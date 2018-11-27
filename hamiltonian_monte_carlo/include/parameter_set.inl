@@ -87,7 +87,20 @@ public:
       sum += value;
     return sum;
   }
+
+  double MagnitudeSquared() const
+  {
+    double sum = 0.
+    for (double value : parameters)
+      sum += value * value;
+    return sum;
+  }
   
+  double Magnitude() const
+  {
+    return sqrt(MagnitudeSquared());
+  }
+
 };
 
 #endif
