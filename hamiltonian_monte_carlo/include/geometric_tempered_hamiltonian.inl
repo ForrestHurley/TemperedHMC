@@ -6,6 +6,7 @@
 template<class ParameterType>
 class GeometricTemperedHamiltonian<ParameterType> : public SimpleHamiltonian<ParameterType>
 {
+static_assert(false, "GeometricTemperedHamiltonian is not fully implemented (no integrator)");
 private:
   mutable ParameterType current_parameter; 
   //horrible hack, requires significant refactoring to fix cleanly (or code repetition)
@@ -34,7 +35,6 @@ public:
 template<class ParameterType>
 void GeometricTemperedHamiltonian<ParameterType>::IntegratePath(ParameterType& parameter, ParameterType& momentum)
 {
-
 }
 
 template<class ParameterType>
@@ -52,7 +52,7 @@ template<class ParameterType>
 ParameterType GeometricTemperedHamiltonian<ParameterType>::G(const ParameterType& parameter) const
 {
   const double probability = exp(-model.Energy(parameter));
-  const double mass = pow(probability, 1. - 1. / temperature);
+  const double mass = pow(probability, 2. / ParameterType::dimension * (1. - 1. / temperature));
   return ParameterType(mass);
 }
 
