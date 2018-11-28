@@ -51,6 +51,9 @@ private:
   {
     double velocity;
     double time;
+
+    RadialVelocity(double velocity, double time) :
+      velocity(velocity), time(time) {}
   };
 
   std::vector<RadialVelocity> data_points;

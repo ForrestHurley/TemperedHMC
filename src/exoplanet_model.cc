@@ -1,13 +1,48 @@
 #include "exoplanet_model.h"
+#include <cassert>
+#include <iostream>
+#include <fstream>
 
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 {
-
+  for (std::vector<double> point : data_points)
+  {
+    assert(point.size() == 2, "Please ensure that the exoplanet model is being passed n x 2 data");
+    this->data_points.push_back(
+        RadialVelocity(point.at(0), point.at(1)));
+  }
 }
 
 ExoplanetModel::ExoplanetModel(std::string filename)
 {
+  std::ifstream file(filename);
+  std::string line;
+  std::vector<std::vector<double> > data_points;
 
+  while(std::getline(file, line))
+  {
+    std::vector<double> line_data;
+    std::stringstream line_stream(line);
+
+    double value;
+    while(line_stream >> value)
+    {
+      line_data.push_back(value
+    }
+    if (line_data.size() != 2)
+    {
+      std::cerr << "Lines must have exactly two data points on them" << std:: endl;
+      assert(false);
+    }
+
+    data_points.push_back(line_data);
+  }
+
+  for (std::vector<double> point : data_points)
+  {
+    this->data_points.push_back(
+        RadialVelocity(point.at(0), point.at(1)));
+  }
 }
 
 double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& parameter) const
