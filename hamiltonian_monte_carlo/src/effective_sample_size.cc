@@ -1,6 +1,6 @@
 #include "effective_sample_size.h"
 
-double static MCMCDiagnostics::AutocorrelationSpectrum(const std::vector<double>& values, int lag, double mean, double variance)
+double MCMCDiagnostics::AutocorrelationSpectrum(const std::vector<double>& values, int lag, double mean, double variance)
 {
   double sum = 0.;  
   for (int m = lag; m < values.size(); m++)
@@ -8,11 +8,11 @@ double static MCMCDiagnostics::AutocorrelationSpectrum(const std::vector<double>
     sum += (values.at(m) - mean) * (values.at(m - lag) - mean);
   }
   
-  const out = sum / (variance * (values.size() - lag));
+  const double out = sum / (variance * (values.size() - lag));
   return out;
 }
 
-double static MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& values, const std::vector<double>& reference_values)
+double MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& values, const std::vector<double>& reference_values)
 {
   const double mean = MCMCDiagnostics::Mean(reference_values);
   const double variance = MCMCDiagnostics::Variance(reference_values, mean);
@@ -20,7 +20,7 @@ double static MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& va
   return MCMCDiagnostics::EffectiveSampleSize(values, mean, variance);
 }
 
-double static MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& values, double mean, double variance)
+double MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& values, double mean, double variance)
 {
   double sum = 0.;
 
@@ -40,7 +40,7 @@ double static MCMCDiagnostics::EffectiveSampleSize(const std::vector<double>& va
   return effective_sample_size;
 }
 
-double static MCMCDiagnostics::Mean(const std::vector<double>& values)
+double MCMCDiagnostics::Mean(const std::vector<double>& values)
 {
   double out = 0;
   for (double val : values)
@@ -50,13 +50,13 @@ double static MCMCDiagnostics::Mean(const std::vector<double>& values)
   return out;
 }
 
-double static MCMCDiagnostics::Variance(const std::vector<double>& values)
+double MCMCDiagnostics::Variance(const std::vector<double>& values)
 {
   const double mean = MCMCDiagnostics::Mean(values);
-  return MCMDiagnostics::Variance(values, mean);
+  return MCMCDiagnostics::Variance(values, mean);
 }
 
-double static MCMCDiagnostics::Variance(const std::vector<double>& values, double mean)
+double MCMCDiagnostics::Variance(const std::vector<double>& values, double mean)
 {
   double out = 0;
   for (double val : values)
