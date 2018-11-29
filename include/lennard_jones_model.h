@@ -1,4 +1,0 @@
-#ifndef LENNARD_JONES_MODEL_H
-#define LENNARD_JONES_MODEL_H
-
-#endif

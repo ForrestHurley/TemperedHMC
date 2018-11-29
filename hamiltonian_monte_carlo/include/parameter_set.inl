@@ -25,35 +25,15 @@ public:
     parameters = initial_values;
   }
 
-  ParameterSet<N> operator+(const ParameterSet<N> other) const
+  ParameterSet<N>& operator%=(const ParameterSet<N>& other)
   {
-    ParameterSet<N> out = *this;
-    out += other;
-    return out;
+    for(int i = 0; i < N; i++)
+      parameters.at(i) %= other.at(i);
+
+    return *this;
   }
 
-  ParameterSet<N> operator*(const ParameterSet<N> other) const
-  {
-    ParameterSet<N> out = *this;
-    out *= other;
-    return out;
-  }
-
-  ParameterSet<N> operator-(const ParameterSet<N> other)
-  {
-    ParameterSet<N> out = *this;
-    out -= other;
-    return out;
-  }
-
-  ParameterSet<N> operator/(const ParameterSet<N> other)
-  {
-    ParameterSet<N> out = *this;
-    out /= other;
-    return out;
-  }
-
-  ParameterSet<N>& operator+=(const ParameterSet<N> other)
+  ParameterSet<N>& operator+=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
       parameters.at(i) += other.at(i);
@@ -61,7 +41,7 @@ public:
     return *this;
   }
 
-  ParameterSet<N>& operator*=(const ParameterSet<N> other)
+  ParameterSet<N>& operator*=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
       parameters.at(i) *= other.at(i);
@@ -69,7 +49,7 @@ public:
     return *this;
   }
 
-  ParameterSet<N>& operator-=(const ParameterSet<N> other)
+  ParameterSet<N>& operator-=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
       parameters.at(i) -= other.at(i);
@@ -77,12 +57,47 @@ public:
     return *this;
   }
 
-  ParameterSet<N>& operator/=(const ParameterSet<N> other)
+  ParameterSet<N>& operator/=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
       parameters.at(i) /= other.at(i);
 
     return *this;
+  }
+
+  ParameterSet<N> operator+(const ParameterSet<N>& other) const
+  {
+    ParameterSet<N> out = *this;
+    out += other;
+    return out;
+  }
+
+  ParameterSet<N> operator*(const ParameterSet<N>& other) const
+  {
+    ParameterSet<N> out = *this;
+    out *= other;
+    return out;
+  }
+
+  ParameterSet<N> operator-(const ParameterSet<N>& other)
+  {
+    ParameterSet<N> out = *this;
+    out -= other;
+    return out;
+  }
+
+  ParameterSet<N> operator/(const ParameterSet<N>& other)
+  {
+    ParameterSet<N> out = *this;
+    out /= other;
+    return out;
+  }
+
+  PrameterSet<N> operator%(const ParameterSet<N>& other)
+  {
+    ParameterSet<N> out = *this;
+    out %= other;
+    return out;
   }
 
   double Sum() const
