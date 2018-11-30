@@ -11,7 +11,9 @@ private:
   virtual double CalculateEnergy(const ParameterType& parameters) const = 0;
   virtual ParameterType CalculateEnergyPartials(const ParameterType& parameters) const = 0;
 
-  virtual ParameterType RealMapPartials(const ParameterType& parameter) const = 0;
+  virtual ParameterType RealMapPartials(
+      const ParameterType& mapped_parameters,
+      const ParameterType& partials) const = 0;
 public:
   explicit Model() {}
   virtual ~MarkovChainMonteCarlo() {}
@@ -29,9 +31,12 @@ public:
   ParameterType EnergyPartials(const ParameterType& parameters) const
   {
     partial_evaluations++;
+    ParameterType mapped_params = ParameterMapReals(
+      parameters);
+
     return RealMapPartials(
-        CalculateEnergyPartials(
-          ParameterMapReals(parameters)));
+        parameters,
+        CalculateEnergyPartials(parameters));
   }
 
   int getEnergyEvaluationCount() const

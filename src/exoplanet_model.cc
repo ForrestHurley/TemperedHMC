@@ -329,7 +329,7 @@ ExoplanetModel::parameter_type ExoplanetModel::StellarYVelocityPartials(
     ( axes_ratio * common_denominator * common_denominator );
 
   const double anomaly_d_peri_time = anomaly_partials.getPeriapsisTime();
-  y_velocity_parialts.getPeriapsisTime() = 
+  y_velocity_partials.getPeriapsisTime() = 
     - n * axes_ratio * stellar_axis * anomaly_d_peri_time * sin_E /
     ( common_denominator * common_denominator );
 
@@ -338,17 +338,83 @@ ExoplanetModel::parameter_type ExoplanetModel::StellarYVelocityPartials(
 
 
 ExoplanetModel::parameter_type ExoplanetModel::ParameterMapReals(
-    const parameter_type& parameter) const
+    const ExoplanetModel::parameter_type& parameter) const
 {
   parameter_type out;
 
-  out.setSemiMajorAxis
+  out.setSemiMajorAxis(
+      exp(
+        parameter.getSemiMajorAxis()));
+
+  out.setEccentricity(
+      InvLogit(
+        parameter.getEccentricity()));
+
+  static const double two_pi = 2. * 3.1415926535898;
+  out.setPeriapsisLongitude(
+      ( ( parameter.getPeriapsisLongitude() % two_pi ) + two_pi ) % two_pi);
+
+  out.setPeriod(
+      exp(
+        parameter.getPeriod()));
+
+  out.setPeriapsisTime(
+      InvLogit(
+        parameter.getPeriapsisTime()) *
+      out.getPeriod() +
+      start_time);
+
+  out.setVariance(
+      exp(
+        parameter.getVariance()));
+
+  return out;
 }
 
-ExoplanetModel::parameter_type ExoplanetModel::RealMapParameters(
-    const parameter_type& parameter) const
+ExoplanetModel::parameter_type ExoplanetModel::RealMapPartials(
+    const ExoplanetModel::parameter_type& mapped_parameters,
+    const ExoplanetModel::parameter_type& partials) const
+{
+  parameter_type reals;
+
+  reals.setSemiMajorAxis(
+      1. / mapped_parameters.getSemiMajorAxis() *
+      partials.getSemiMajorAxis() );
+
+  reals.setEccentricity(
+      LogitDeriv(mapped_parameters.getEccentricity()) *
+      partials.getEccentricity() );
+
+  reals.setPeriapsisLongitude(
+      partials.getPeriapsisLongitude());
+
+  reals.setPeriod(
+      1. / mapped_parameters.getPeriod() *
+      partials.getPeriod() );
+
+  reals.setPeriapsisTime(
+      ( mapped_parameters.getPeriod() *
+        LogitDeriv(mapped_parameters.getPeriapsisTime()) *
+        partials.getPeriapsisTime() -
+        Logit(mapped_parameters.getPeriapsisTime()) *
+        partials.getPeriod() ) /
+      ( mapped_parameters.getPeriod() * mapped_parameters.getPeriod() ) );
+
+  reals.setVariance(
+      1. / mapped_parameters.getVariance() *
+      partials.getVariance() );
+
+  return reals;
+}
+
+double ExoplanetModel::PriorEnergy(
+    const ExoplanetModel::parameter_type& parameter) const
 {
 
 }
 
+ExoplanetModel::parameter_type ExoplanetModel::PriorEnergyPartials(
+    const ExoplanetModel::parameter_type& parameter) const
+{
 
+}

@@ -22,7 +22,7 @@ public:
   double& getPeriapsisLongitude() { return parameters.at(2); }
   double getPeriapsisLongitude() const { return parameters.at(2); }
   void setPeriapsisLongitude(double new_periapsis) { parameters.at(2) = new_periapsis; }
-  
+
   double& getPeriapsisTime() { return parameters.at(3); }
   double getPeriapsisTime() const { return parameters.at(3); }
   void setPeriapsisTime(double new_periapsis) { parameters.at(3) = new_periapsis; }
@@ -85,12 +85,15 @@ private:
   parameter_type StellarYVelocityPartials(const parameter_type& parameter, double time) const;
 
   double PriorEnergy(const parameter_type& parameter) const;
-  double PriorEnergyPartials(const parameter_type& parameter) const;
+  parameter_type PriorEnergyPartials(const parameter_type& parameter) const;
 
-  double Logit(double in) { return log( in / ( 1 - in ) ); }
-  double InvLogit(double in) { return exp( in ) / ( 1 + exp( in ) ); }
+  double Logit(double in) { return log( in / ( 1. - in ) ); }
+  double InvLogit(double in) { return exp( in ) / ( 1. + exp( in ) ); }
+  double LogitDeriv(double in) { return 1. / ( in * ( 1. - in ) ); }
 
-  virtual parameter_type RealMapPartials(const parameter_type& parameter) const override;
+  virtual parameter_type RealMapPartials(
+      const parameter_type& mapped_parameters,
+      const parameter_type& partials) const override;
 };
 
 #endif 
