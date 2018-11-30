@@ -28,7 +28,7 @@ public:
   ParameterSet<N>& operator%=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) %= other.at(i);
+      parameters.at(i) %= other.parameters.at(i);
 
     return *this;
   }
@@ -36,7 +36,7 @@ public:
   ParameterSet<N>& operator+=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) += other.at(i);
+      parameters.at(i) += other.parameters.at(i);
 
     return *this;
   }
@@ -44,7 +44,7 @@ public:
   ParameterSet<N>& operator*=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) *= other.at(i);
+      parameters.at(i) *= other.parameters.at(i);
 
     return *this;
   }
@@ -52,7 +52,7 @@ public:
   ParameterSet<N>& operator-=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) -= other.at(i);
+      parameters.at(i) -= other.parameters.at(i);
 
     return *this;
   }
@@ -60,7 +60,7 @@ public:
   ParameterSet<N>& operator/=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) /= other.at(i);
+      parameters.at(i) /= other.parameters.at(i);
 
     return *this;
   }
@@ -93,7 +93,7 @@ public:
     return out;
   }
 
-  PrameterSet<N> operator%(const ParameterSet<N>& other)
+  ParameterSet<N> operator%(const ParameterSet<N>& other)
   {
     ParameterSet<N> out = *this;
     out %= other;
@@ -121,6 +121,15 @@ public:
     return sqrt(MagnitudeSquared());
   }
 
+  ParameterSet<N> Sign() const
+  {
+    ParameterSet<N> out;
+    for (int i = 0; < N; i++)
+      out.at(i) = 
+        (parameters.at(i) > 0) -
+        (parameters.at(i) < 0);
+    return out;
+  }
 };
 
 #endif

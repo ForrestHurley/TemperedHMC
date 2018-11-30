@@ -45,9 +45,24 @@ ExoplanetModel::ExoplanetModel(std::string filename)
   }
 }
 
+double ExoplanetModel::PlanetaryMass(
+    const ExoplanetModel::parameter_type& real_parameter) const
+{
+  const parameter_type parameter = ParameterMapReals(real_parameter)
+  const double stellar_mass = parameter.getStellarMass();
+  const double inverse_n = parameter.getPeriod() / (2 * pi);
+  const double gravitational_parameter = stellar_mass * G;
+  const double power_ratio = 
+    pow( gravitational_parameter / parameter.getSemiMajorAxis(), 3. / 2.);
+
+  const double planet_mass = 
+    inverse_n * power_ratio - stellar_mass;
+  return planet_mass;
+}
+
 double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& parameter) const
 {
-  double energy = 0.;
+  double energy = PriorEnergy(parameter);
   
   for(RadialVelocity datum : data_points)
   {
@@ -71,7 +86,7 @@ double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& par
 ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
   const ExoplanetModel::parameter_type& parameter) const
 {
-  parameter_type partials;
+  parameter_type partials = PriorEnergyPartials(parameter);
 
   for(radialVelocity datum : data_points)
   {
@@ -128,20 +143,6 @@ ExoplanetModel::parameter_type ExoplanetModel::ExpectedVelocityPartials(
     - x_speed * sin(theta) + y_speed * cos(theta);
 
   return velocity_partials;
-}
-
-double ExoplanetModel::PlanetaryMass(
-    const ExoplanetModel::parameter_type& parameter) const
-{
-  const double stellar_mass = parameter.getStellarMass();
-  const double inverse_n = parameter.getPeriod() / (2 * pi);
-  const double gravitational_parameter = stellar_mass * G;
-  const double power_ratio = 
-    pow( gravitational_parameter / parameter.getSemiMajorAxis(), 3. / 2.);
-
-  const double planet_mass = 
-    inverse_n * power_ratio - stellar_mass;
-  return planet_mass;
 }
 
 double ExoplanetModel::EccentricAnomaly(
@@ -335,5 +336,19 @@ ExoplanetModel::parameter_type ExoplanetModel::StellarYVelocityPartials(
   return y_velocity_partials;
 }
 
+
+ExoplanetModel::parameter_type ExoplanetModel::ParameterMapReals(
+    const parameter_type& parameter) const
+{
+  parameter_type out;
+
+  out.setSemiMajorAxis
+}
+
+ExoplanetModel::parameter_type ExoplanetModel::RealMapParameters(
+    const parameter_type& parameter) const
+{
+
+}
 
 

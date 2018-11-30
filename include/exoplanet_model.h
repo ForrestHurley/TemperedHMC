@@ -15,7 +15,7 @@ public:
   double getSemiMajorAxis() const { return parameters.at(0); }
   void setSemiMajorAxis(double new_axis) { parameters.at(0) = new_axis; }
 
-  double& getEccentricity() { return parameters.at(1); }
+  double& getEccentricity() const { return parameters.at(1); }
   double getEccentricity() const { return parameters.at(1); }
   void setEccentricity(double new_ecc) { parameters.at(1) = new_ecc; }
 
@@ -62,6 +62,9 @@ public:
   explicit ExoplanetModel(std::vector<std::vector<double> > data_points);
   explicit ExoplanetModel(std::string filename);
 
+  double PlanetaryMass(const parameter_type& parameter) const;
+  virtual parameter_type ParameterMapReals(const parameter_type& parameter) const override;
+
 private:
   double CalculateEnergy(const parameter_type& parameter) const override;
   parameter_type CalculateEnergyPartials(const parameter_type& parameter) const override;
@@ -69,8 +72,6 @@ private:
   double ExpectedVelocity(const parameter_type& parameter, double time) const;
   parameter_type ExpectedVelocityPartials(const parameter_type& parameter, double time) const;
 
-  double PlanetaryMass(const parameter_type& parameter) const;
-  
   double EccentricAnomaly(const parameter_type& parameter, double time) const;
   parameter_type EccentricAnomalyPartials(const parameter_type& parameter, double time) const;
 
@@ -82,6 +83,14 @@ private:
 
   double StellarYVelocity(const parameter_type& parameter, double time) const;
   parameter_type StellarYVelocityPartials(const parameter_type& parameter, double time) const;
+
+  double PriorEnergy(const parameter_type& parameter) const;
+  double PriorEnergyPartials(const parameter_type& parameter) const;
+
+  double Logit(double in) { return log( in / ( 1 - in ) ); }
+  double InvLogit(double in) { return exp( in ) / ( 1 + exp( in ) ); }
+
+  virtual parameter_type RealMapPartials(const parameter_type& parameter) const override;
 };
 
 #endif 
