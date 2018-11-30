@@ -410,11 +410,37 @@ ExoplanetModel::parameter_type ExoplanetModel::RealMapPartials(
 double ExoplanetModel::PriorEnergy(
     const ExoplanetModel::parameter_type& parameter) const
 {
+  double energy = 0.;
 
+  //exponential distribution with lambda = 1
+  energy += parameter.getSemiMajorAxis();
+
+  //p(e) is proportional to 1 - e
+  energy += - log(1. - parameter.getEccentricity());
+
+  //exponential distribution with mean 88 days (the year of mercury)
+  energy += parameter.getPeriod() / 88.;
+
+  //normal distribution (actually half normal because reasons)
+  energy += parameter.getVariance() * parameter.getVariance() / 2.;
+
+  //Periapsis time and longitude have uniform priors
+
+  return energy;
 }
 
 ExoplanetModel::parameter_type ExoplanetModel::PriorEnergyPartials(
     const ExoplanetModel::parameter_type& parameter) const
 {
+  parameter_type partials;
 
+  partials.setSemiMajorAxis(1.);
+
+  partials.setEccentricity(1. / (1. - parameter.getEccentricity()) );
+
+  partials.setPeriod(1. / 88.);
+
+  partials.setVariance(parameter.getVariance());
+
+  return partials;
 }
