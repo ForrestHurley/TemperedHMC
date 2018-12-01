@@ -9,11 +9,11 @@ template<int particles>
 class LennardJonesParticles : public ParameterSet<particles * 2>
 {
 public:
-  Point getNthParticle(int n) const { return Point(&parameters.at(2 * n)); }
+  Point getNthParticle(int n) const { return Point(&this->parameters.at(2 * n)); }
   void setNthParticle(int n, const Point& point)
   {
-    parameters.at(2 * n) = point.at(0);
-    parameters.at(2 * n + 1) = point.at(1);
+    this->parameters.at(2 * n) = point.parameters.at(0);
+    this->parameters.at(2 * n + 1) = point.parameters.at(1);
   }
 
   static const int particle_count = particles;
@@ -35,6 +35,8 @@ private:
 public:
   LennardJonesModel(double x_size = 10, double y_size = 10);
 
+  using parameter_type = typename Model<LennardJonesParticles<particles> >::parameter_type;
+
   virtual parameter_type ParameterMapReals(const parameter_type& parameter) const override;
 private:
   double CalculateEnergy(const parameter_type& parameters) const = 0;
@@ -46,7 +48,7 @@ private:
   Point Displacement(const Point& a, const Point& b) const;
 
   double Distance(const Point& a, const Point& b) const;
-  LennardJonesParticles<2> DistancePartials(const Point& a, const Point& b);
+  LennardJonesParticles<2> DistancePartials(const Point& a, const Point& b) const;
 
   double Potential(double distance) const;
   double PotentialPartials(double distance) const;
@@ -70,9 +72,9 @@ LennardJonesModel<particles>::LennardJonesModel(
 }
 
 template <int particles>
-LennardJonesModel<particles>::parameter_type 
+typename LennardJonesModel<particles>::parameter_type 
 LennardJonesModel<particles>::ParameterMapReals(
-    const LennardJonesModel<particles>::parameter_type& parameter) const override
+    const LennardJonesModel<particles>::parameter_type& parameter) const
 {
   parameter_type out;
   for (int i = 0; i < particles; i++)
@@ -100,7 +102,7 @@ double LennardJonesModel<particles>::CalculateEnergy(
 }
 
 template <int particles>
-LennardJonesModel<particles>::parameter_type 
+typename LennardJonesModel<particles>::parameter_type 
 LennardJonesModel<particles>::CalculateEnergyPartials(
     const LennardJonesModel<particles>::parameter_type& parameters) const
 {
@@ -117,7 +119,7 @@ LennardJonesModel<particles>::CalculateEnergyPartials(
           i,
           partials.getNthParticle(i) + tmp_partials.getNthParticle(0) );
       partials.setNthParticle(
-          j
+          j,
           partials.getNthParticle(j) + tmp_partials.getNthParticle(1) );
     }
   }
@@ -126,7 +128,7 @@ LennardJonesModel<particles>::CalculateEnergyPartials(
 
 template <int particles>
 double LennardJonesModel<particles>::DistanceEnergy(
-    const Point& a, const Point& b)
+    const Point& a, const Point& b) const
 {
   const double distance = Distance(a, b);
   return Potential(distance);
@@ -142,25 +144,25 @@ LennardJonesParticles<2> LennardJonesModel<particles>::DistanceEnergyPartials(
   const double potential_partial =
     PotentialPartials(distance);
 
-  const LennarardJonesParticles<2> partials =
+  const LennardJonesParticles<2> partials =
     dist_partials * potential_partial;
   return partials;
 }
 
 template <int particles>
 Point LennardJonesModel<particles>::Displacement(
-    const Point& a, const Point& b)
+    const Point& a, const Point& b) const
 {
   const Point half_bounds = bounds * 0.5;
   Point difference = ( ( a - b ) + bounds ) % bounds;
-  Point difference = ( ( difference + half_bounds ) % bounds ) - half_bounds;
+  difference = ( ( difference + half_bounds ) % bounds ) - half_bounds;
 
   return difference;
 }
 
 template <int particles>
 double LennardJonesModel<particles>::Distance(
-    const Point& a, const Point& b)
+    const Point& a, const Point& b) const
 {
   const Point displacement = Displacement(a, b);
   return displacement.Magnitude();
@@ -168,7 +170,7 @@ double LennardJonesModel<particles>::Distance(
 
 template <int particles>
 LennardJonesParticles<2> LennardJonesModel<particles>::DistancePartials(
-    const Point& a, const Point& b)
+    const Point& a, const Point& b) const
 {
   LennardJonesParticles<2> partials;
   const Point difference = Displacement(a, b);
@@ -194,7 +196,8 @@ double LennardJonesModel<particles>::Potential(double distance) const
   const double potential =
     4 * potential_depth * (recip_twelve - recip_six);
 
-  potential -= continuity_adjustment_value;
+  const double final_potential = 
+    potential - continuity_adjustment_value;
 
   return potential;
 }

@@ -11,6 +11,7 @@ class Point : public ParameterSet<2>
     parameters.at(0) = *array;
     parameters.at(1) = *(array + 1);
   }
+  Point(const ParameterSet<2>& old) : ParameterSet<2>(old) {}
 
   double& getX() { return parameters.at(0); }
   double getX() const { return parameters.at(0); }

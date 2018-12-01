@@ -73,6 +73,14 @@ public:
     return *this;
   }
 
+  ParameterSet<N>& operator+=(double other)
+  {
+    for(int i = 0; i < N; i++)
+      parameters.at(i) += other;
+
+    return *this;
+  }
+
   ParameterSet<N>& operator*=(double other)
   {
     for(int i = 0; i < N; i++)
@@ -80,6 +88,15 @@ public:
 
     return *this;
   }
+
+  ParameterSet<N>& operator-=(double other)
+  {
+    for(int i = 0; i < N; i++)
+      parameters.at(i) -= other;
+
+    return *this;
+  }
+
 
   ParameterSet<N>& operator/=(double other)
   {
@@ -103,24 +120,31 @@ public:
     return out;
   }
 
-  ParameterSet<N> operator-(const ParameterSet<N>& other)
+  ParameterSet<N> operator-(const ParameterSet<N>& other) const
   {
     ParameterSet<N> out = *this;
     out -= other;
     return out;
   }
 
-  ParameterSet<N> operator/(const ParameterSet<N>& other)
+  ParameterSet<N> operator/(const ParameterSet<N>& other) const
   {
     ParameterSet<N> out = *this;
     out /= other;
     return out;
   }
 
-  ParameterSet<N> operator%(const ParameterSet<N>& other)
+  ParameterSet<N> operator%(const ParameterSet<N>& other) const
   {
     ParameterSet<N> out = *this;
     out %= other;
+    return out;
+  }
+
+  ParameterSet<N> operator+(double other) const
+  {
+    ParameterSet<N> out = *this;
+    out += other;
     return out;
   }
 
@@ -131,7 +155,14 @@ public:
     return out;
   }
 
-  ParameterSet<N> operator/(double other)
+  ParameterSet<N> operator-(double other) const
+  {
+    ParameterSet<N> out = *this;
+    out -= other;
+    return out;
+  }
+
+  ParameterSet<N> operator/(double other) const
   {
     ParameterSet<N> out = *this;
     out /= other;

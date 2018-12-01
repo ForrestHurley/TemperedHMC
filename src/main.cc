@@ -19,13 +19,30 @@ int main()
   //mean, variance
   GaussianModel model = GaussianModel(0., 1.);
 
-  //model, step length, path length
+  LennardJonesModel<2> lj_model();
+
+  const double step_length = 0.1;
+  const double path_length = 10;
+
+  //model, step length, path steps
   SimpleHamiltonian<GaussianModel::parameter_type> 
-    hamiltonian(model, 1., 1);
+    hamiltonian(model, step_length, 1);
+
+  //model, step length, path steps, alpha ratio
+  TrajectoryTemperedHamiltonian<GaussianModel::parameter_type>
+    tempered_hamiltitonian(model, step_length, path_length, 1.05);
 
   //model, hamiltonian, temperature
   HamiltonianMonteCarlo<GaussianModel::parameter_type>
     mcmc(model, hamiltonian, 1.);
+
+  SimpleHamiltonian<GaussianModel::parameter_type>
+    nuts_hamiltonian(model, step_length, 1);
+  NUTS<GaussianModel::parameter_type>
+    nuts(model, nuts_hamiltonian);
+
+  LookAheadSampler<GaussianModel::parameter_type>
+    look_ahead(model, hamiltonian);
 
   GaussianModel::parameter_type initial_state;
 
