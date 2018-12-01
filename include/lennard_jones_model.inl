@@ -1,5 +1,5 @@
-#ifndef LENNARD_JONES_MODEL_H
-#define LENNARD_JONES_MODEL_H
+#ifndef LENNARD_JONES_MODEL_INL
+#define LENNARD_JONES_MODEL_INL
 
 #include "parameter_set.inl"
 #include "model.inl"

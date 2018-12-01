@@ -3,8 +3,12 @@
 
 #include <array>
 
+//Do not inherit from this
+//Inherit from ParameterSet
+class ParameterBase {};
+
 template<int N>
-class ParameterSet<N>
+class ParameterSet : ParameterBase
 {
 public:
   static const int dimension = N;
@@ -15,7 +19,7 @@ public:
     for (int i = 0; i < N; i++)
       parameters.at(i) = 0.;
   }
-  explicit ParameterSet<N>(double initial_values = 0.)
+  explicit ParameterSet<N>(double initial_values)
   {
     for (int i = 0; i < N; i++)
       parameters.at(i) = initial_values;
@@ -23,6 +27,10 @@ public:
   explicit ParameterSet<N>(std::array<double, N> initial_values)
   {
     parameters = initial_values;
+  }
+  ParameterSet<N>(const ParameterSet<N>& old)
+  {
+    parameters = old.parameters;
   }
 
   ParameterSet<N>& operator%=(const ParameterSet<N>& other)
@@ -65,6 +73,22 @@ public:
     return *this;
   }
 
+  ParameterSet<N>& operator*=(double other)
+  {
+    for(int i = 0; i < N; i++)
+      parameters.at(i) *= other;
+
+    return *this;
+  }
+
+  ParameterSet<N>& operator/=(double other)
+  {
+    for(int i = 0; i < N; i++)
+      parameters.at(i) /= other;
+
+    return *this;
+  }
+
   ParameterSet<N> operator+(const ParameterSet<N>& other) const
   {
     ParameterSet<N> out = *this;
@@ -100,6 +124,20 @@ public:
     return out;
   }
 
+  ParameterSet<N> operator*(double other) const
+  {
+    ParameterSet<N> out = *this;
+    out *= other;
+    return out;
+  }
+
+  ParameterSet<N> operator/(double other)
+  {
+    ParameterSet<N> out = *this;
+    out /= other;
+    return out;
+  }
+
   double Sum() const
   {
     double sum = 0.;
@@ -110,7 +148,7 @@ public:
 
   double MagnitudeSquared() const
   {
-    double sum = 0.
+    double sum = 0.;
     for (double value : parameters)
       sum += value * value;
     return sum;
@@ -124,7 +162,7 @@ public:
   ParameterSet<N> Sign() const
   {
     ParameterSet<N> out;
-    for (int i = 0; < N; i++)
+    for (int i = 0; i < N; i++)
       out.at(i) = 
         (parameters.at(i) > 0) -
         (parameters.at(i) < 0);

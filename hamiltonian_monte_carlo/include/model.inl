@@ -1,12 +1,15 @@
+#ifndef MODEL_INL
+#define MODEL_INL
+
 #include "parameter_set.inl"
 
 template<class ParameterType>
-class Model<ParameterType>
+class Model
 {
-static_assert(std::is_base_of<ParameterSet, ParameterType>::value, "Parameter type must inherit ParameterSet for Model");
+static_assert(std::is_base_of<ParameterBase, ParameterType>::value, "Parameter type must inherit ParameterSet for Model");
 private:
-  int energy_evaluations = 0;
-  int partial_evaluations = 0;
+  mutable int energy_evaluations = 0;
+  mutable int partial_evaluations = 0;
 
   virtual double CalculateEnergy(const ParameterType& parameters) const = 0;
   virtual ParameterType CalculateEnergyPartials(const ParameterType& parameters) const = 0;
@@ -16,7 +19,7 @@ private:
       const ParameterType& partials) const = 0;
 public:
   explicit Model() {}
-  virtual ~MarkovChainMonteCarlo() {}
+  virtual ~Model() {}
 
   typedef ParameterType parameter_type;
   virtual ParameterType ParameterMapReals(const ParameterType& parameter) const = 0;
@@ -46,6 +49,8 @@ public:
 
   int getEnergyPartialsEvaluationCount() const
   {
-    return partial_evalutations;
+    return partial_evaluations;
   }
 };
+
+#endif

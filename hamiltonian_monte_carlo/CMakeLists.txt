@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(hamiltonian_monte_carlo)
 
-set(HAMILTONIAN_MONTE_CARLO_SOURCES src/effective_sample_size.cc)
+set(HAMILTONIAN_MONTE_CARLO_SOURCES src/mcmc_diagnostics.cc)
 
 add_library(hamiltonian_monte_carlo ${HAMILTONIAN_MONTE_CARLO_SOURCES})
 

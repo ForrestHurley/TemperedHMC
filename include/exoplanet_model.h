@@ -2,8 +2,11 @@
 #define EXOPLANET_MODEL_H
 
 #include <vector>
-#include <pair>
 #include <string>
+#include "parameter_set.inl"
+#include "model.inl"
+
+#include "math.h"
 
 //Parameters
 //Semi-major axis, eccentricity, argument of periapsis
@@ -11,11 +14,14 @@
 class ExoplanetParameters : public ParameterSet<6>
 {
 public:
+  ExoplanetParameters() {}
+  ExoplanetParameters(const ParameterSet<6>& old) : ParameterSet<6>(old) {}
+
   double& getSemiMajorAxis() { return parameters.at(0); }
   double getSemiMajorAxis() const { return parameters.at(0); }
   void setSemiMajorAxis(double new_axis) { parameters.at(0) = new_axis; }
 
-  double& getEccentricity() const { return parameters.at(1); }
+  double& getEccentricity() { return parameters.at(1); }
   double getEccentricity() const { return parameters.at(1); }
   void setEccentricity(double new_ecc) { parameters.at(1) = new_ecc; }
 
@@ -44,15 +50,17 @@ public:
 class ExoplanetModel : public Model<ExoplanetParameters>
 {
 private:
-  static const double pi = 3.14159265358979323846264;
-  static const double G = 39.478;
+  constexpr static double pi = 3.14159265358979323846264;
+  constexpr static double G = 39.478;
+
+  double start_time;
 
   struct RadialVelocity
   {
-    double velocity;
     double time;
+    double velocity;
 
-    RadialVelocity(double velocity, double time) :
+    RadialVelocity(double time, double velocity) :
       velocity(velocity), time(time) {}
   };
 
@@ -87,9 +95,9 @@ private:
   double PriorEnergy(const parameter_type& parameter) const;
   parameter_type PriorEnergyPartials(const parameter_type& parameter) const;
 
-  double Logit(double in) { return log( in / ( 1. - in ) ); }
-  double InvLogit(double in) { return exp( in ) / ( 1. + exp( in ) ); }
-  double LogitDeriv(double in) { return 1. / ( in * ( 1. - in ) ); }
+  static constexpr double Logit(double in) { return log( in / ( 1. - in ) ); }
+  static constexpr double InvLogit(double in) { return exp( in ) / ( 1. + exp( in ) ); }
+  static constexpr double LogitDeriv(double in) { return 1. / ( in * ( 1. - in ) ); }
 
   virtual parameter_type RealMapPartials(
       const parameter_type& mapped_parameters,

@@ -2,14 +2,19 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 {
+  start_time = 0.;
   for (std::vector<double> point : data_points)
   {
-    assert(point.size() == 2, "Please ensure that the exoplanet model is being passed n x 2 data");
+    assert(point.size() == 2);
     this->data_points.push_back(
         RadialVelocity(point.at(0), point.at(1)));
+
+    if (point.at(0) < start_time)
+      start_time = point.at(0);
   }
 }
 
@@ -27,7 +32,7 @@ ExoplanetModel::ExoplanetModel(std::string filename)
     double value;
     while(line_stream >> value)
     {
-      line_data.push_back(value
+      line_data.push_back(value);
     }
     if (line_data.size() != 2)
     {
@@ -38,17 +43,20 @@ ExoplanetModel::ExoplanetModel(std::string filename)
     data_points.push_back(line_data);
   }
 
+  start_time = 0.;
   for (std::vector<double> point : data_points)
   {
     this->data_points.push_back(
         RadialVelocity(point.at(0), point.at(1)));
+    if (point.at(0) < start_time)
+      start_time = point.at(0);
   }
 }
 
 double ExoplanetModel::PlanetaryMass(
     const ExoplanetModel::parameter_type& real_parameter) const
 {
-  const parameter_type parameter = ParameterMapReals(real_parameter)
+  const parameter_type parameter = ParameterMapReals(real_parameter);
   const double stellar_mass = parameter.getStellarMass();
   const double inverse_n = parameter.getPeriod() / (2 * pi);
   const double gravitational_parameter = stellar_mass * G;
@@ -88,7 +96,7 @@ ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
 {
   parameter_type partials = PriorEnergyPartials(parameter);
 
-  for(radialVelocity datum : data_points)
+  for(RadialVelocity datum : data_points)
   {
     const parameter_type expected_velocity_partials =
       ExpectedVelocityPartials(parameter, datum.time);
@@ -99,7 +107,7 @@ ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
     //For everything except variance
     // d/d theta E = 2 (f(theta) - a) * d / d theta f / (2 variance)
     parameter_type datum_partials =
-      difference * expected_velocity_partials / parameter.getVariance();
+      expected_velocity_partials * difference / parameter.getVariance();
 
     datum_partials.getVariance() = 
       - difference * difference / (2 * parameter.getVariance() * parameter.getVariance());
@@ -111,7 +119,7 @@ ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
 }
 
 double ExoplanetModel::ExpectedVelocity(
-  const ExoplanetModel::parameter_type parameter, double time) const
+  const ExoplanetModel::parameter_type& parameter, double time) const
 {
   const double x_speed =
     StellarXVelocity(parameter, time);
@@ -125,7 +133,7 @@ double ExoplanetModel::ExpectedVelocity(
 }
 
 ExoplanetModel::parameter_type ExoplanetModel::ExpectedVelocityPartials(
-  const ExoplanetModel::parameter_type parameter, double time) const
+  const ExoplanetModel::parameter_type& parameter, double time) const
 {
 
   const double x_speed =
@@ -136,8 +144,8 @@ ExoplanetModel::parameter_type ExoplanetModel::ExpectedVelocityPartials(
     parameter.getPeriapsisLongitude();
 
   parameter_type velocity_partials =
-    cos(theta) * StellarXVelocityPartials(parameter, time) +
-    sin(theta) * StellarYVelocityPartials(parameter, time);
+    StellarXVelocityPartials(parameter, time) * cos(theta) +
+    StellarYVelocityPartials(parameter, time) * sin(theta);
 
   velocity_partials.getPeriapsisLongitude() =
     - x_speed * sin(theta) + y_speed * cos(theta);
@@ -150,7 +158,7 @@ double ExoplanetModel::EccentricAnomaly(
 {
   const double n = 2 * pi / parameter.getPeriod();
   const double M = n * ( time - parameter.getPeriapsisTime() );
-  const double eccentricity = parameter.GetEccentricity();
+  const double eccentricity = parameter.getEccentricity();
 
   double E = M;
   double E_old = E + 1;
@@ -352,7 +360,7 @@ ExoplanetModel::parameter_type ExoplanetModel::ParameterMapReals(
 
   static const double two_pi = 2. * 3.1415926535898;
   out.setPeriapsisLongitude(
-      ( ( parameter.getPeriapsisLongitude() % two_pi ) + two_pi ) % two_pi);
+      fmod( ( fmod( parameter.getPeriapsisLongitude(), two_pi ) + two_pi ), two_pi) );
 
   out.setPeriod(
       exp(

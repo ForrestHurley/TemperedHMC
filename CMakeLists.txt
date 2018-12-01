@@ -41,7 +41,7 @@ endif()
 
 add_subdirectory(hamiltonian_monte_carlo)
 
-set(MAIN_SOURCES src/main.cc src/exoplanet_model.cc)
+set(MAIN_SOURCES src/main.cc src/exoplanet_model.cc src/gaussian_model.cc)
 
 add_executable(main ${MAIN_SOURCES})
 

@@ -5,7 +5,7 @@
 #include <random>
 
 template<class ParameterType>
-class SimpleHamiltonian<ParameterType> : public Hamiltonian<ParameterType>
+class SimpleHamiltonian : public Hamiltonian<ParameterType>
 {
 private:
   double step_length;
@@ -14,10 +14,10 @@ private:
 
 public:
   explicit SimpleHamiltonian(
-    const Model& model,
+    const Model<ParameterType>& model,
     double step_length = 0.01,
     int path_length = 100)
-      : Hamiltonian(model),
+      : Hamiltonian<ParameterType>(model),
         step_length(step_length),
         path_length(path_length), 
         parameter_masses(1.) { }
@@ -35,32 +35,34 @@ public:
   virtual const ParameterType& getParameterMasses() const { return parameter_masses; }
 
   virtual void IntegratePath(
-    ParameterType parameters&,
-    ParameterType momenta&) const override;
+    ParameterType& parameters,
+    ParameterType& momenta) const override;
 
   void LeapfrogStep(
-    ParameterType parameters&, 
-    ParameterType momenta&) const;
+    ParameterType& parameters, 
+    ParameterType& momenta) const;
 
-  virtual ParameterType RandomMomentum(const ParameterType& parameter) const override;
+  virtual ParameterType RandomMomentum(const ParameterType& parameter, double temperature = 1.) const override;
 
   virtual double Energy(
       const ParameterType& parameter, 
       const ParameterType& momentum) const override;
 };
 
-double Energy(const ParameterType& parameter, const ParameterType& momentum) const
+template<class ParameterType>
+double SimpleHamiltonian<ParameterType>::Energy(
+    const ParameterType& parameter, const ParameterType& momentum) const
 {
-  const ParameterType dimension_energy = momentum * momentum / ( 2 * getParameterMasses());
+  const ParameterType dimension_energy = momentum * momentum / ( getParameterMasses() * 2. );
   const double kinetic = dimension_energy.Sum();
-  const double potential = model.Energy(parameter);
+  const double potential = this->model.Energy(parameter);
   return kinetic + potential;
 }
 
 template<class ParameterType>
 void SimpleHamiltonian<ParameterType>::IntegratePath(
-  ParameterType parameters&,
-  ParameterType momenta&) const
+  ParameterType& parameters,
+  ParameterType& momenta) const
 {
   for(unsigned int i = 0; i < path_length; i++)
     LeapfrogStep(parameters, momenta);
@@ -68,29 +70,32 @@ void SimpleHamiltonian<ParameterType>::IntegratePath(
 
 template<class ParameterType>
 void SimpleHamiltonian<ParameterType>::LeapfrogStep(
-  ParameterType parameters&,
-  ParameterType momenta&) const
+  ParameterType& parameters,
+  ParameterType& momenta) const
 {
   momenta -=
-    step_length / 2. * model.EnergyPartials(parameters);
+    this->model.EnergyPartials(parameters) * step_length / 2.;
 
   parameters +=
-    step_length * momenta / getParameterMasses();
+    momenta * step_length / getParameterMasses();
 
   momenta -=
-    step_length / 2. * model.EnergyPartials(parameters);
+    this->model.EnergyPartials(parameters) * step_length / 2.;
 }
 
 template<class ParameterType>
-ParameterType SimpleHamiltonian<ParameterType>::RandomMomentum(const ParameterType& parameter) const
+ParameterType SimpleHamiltonian<ParameterType>::RandomMomentum(const ParameterType& parameter, double temperature) const
 {
   static thread_local std::random_device device;
   static thread_local std::mt19937_64 generator(device());
   static thread_local std::normal_distribution<double> normal(0., 1.);
 
+  const double sqrt_temp = sqrt(temperature);
+
   ParameterType out;
   for (int i = 0; i < out.dimension; i++)
-    out.parameters.at(i) = normal(generator) * sqrt(getParameterMasses().at(i));
+    out.parameters.at(i) = normal(generator) * 
+      sqrt(getParameterMasses().parameters.at(i)) * sqrt_temp;
 
   return out;
 }

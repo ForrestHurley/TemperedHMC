@@ -2,16 +2,17 @@
 #define MARKOV_CHAIN_MONTE_CARLO_INL
 
 #include "model.inl"
+#include "parameter_set.inl"
 #include <random>
 
-template<class ParamaterType>
-class MarkovChainMonteCarlo<ParameterType>
+template<class ParameterType>
+class MarkovChainMonteCarlo
 {
-static_assert(std::is_base_of<ParameterSet, ParameterType>::value, "Model parameter must inherit ParameterSet for MCMC");
+static_assert(std::is_base_of<ParameterBase, ParameterType>::value, "Model parameter must inherit ParameterSet for MCMC");
 private:
   std::vector<ParameterType> parameter_history;
 protected:
-  const Model& model;
+  const Model<ParameterType>& model;
 
   static double getRandomUniform()
   {
@@ -23,7 +24,7 @@ protected:
   }
 
 public:
-  explicit MarkovChainMonteCarlo(const Model& model) : model(model) {}
+  explicit MarkovChainMonteCarlo(const Model<ParameterType>& model) : model(model) {}
   virtual ~MarkovChainMonteCarlo() {}
 
   virtual void SimulateStep(ParameterType& parameter) = 0;
@@ -55,6 +56,25 @@ public:
       out.push_back(parameter_history.at(i));
     
     return out;
+  }
+
+  std::vector<double>
+    getSimulatedParameters(int thinning_factor, int parameter_index) const
+  {
+    std::vector<double> out;
+    out.reserve(parameter_history.size());
+
+    int remainder = parameter_history.size() % thinning_factor;
+
+    for (int i = remainder; i < parameter_history.size(); i += thinning_factor)
+      out.push_back(parameter_history.at(i).parameters.at(parameter_index));
+    
+    return out;
+  }
+
+  void ClearHistory()
+  {
+    parameter_history = std::vector<ParameterType>();
   }
 
 };

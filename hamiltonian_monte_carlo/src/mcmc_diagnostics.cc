@@ -1,4 +1,4 @@
-#include "effective_sample_size.h"
+#include "mcmc_diagnostics.h"
 
 double MCMCDiagnostics::AutocorrelationSpectrum(const std::vector<double>& values, int lag, double mean, double variance)
 {
