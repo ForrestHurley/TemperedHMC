@@ -140,6 +140,8 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
   working_tree.count = 1;
   working_tree.safe = true;
 
+  bool made_step = false;
+
   unsigned int max_iters = 50000;
   unsigned int height = 0;
   while (working_tree.safe == true & height < max_iters)
@@ -175,6 +177,7 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
          < (double)second_tree.count / working_tree.count))
     {
       parameter = second_tree.new_parameter;
+      made_step = true;
     }
 
     const ParameterType difference = working_tree.right_parameter - working_tree.left_parameter;
@@ -191,6 +194,11 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
 
     height++;
   }
+
+  if (made_step)
+    this->accept_count++;
+  else
+    this->reject_count++;
 }
 
 #endif

@@ -5,11 +5,13 @@
 #include <algorithm>
 #include <vector>
 
+#include <iostream>
+
 template<class ParameterType>
 class LookAheadSampler : public HamiltonianMonteCarlo<ParameterType>
 {
 private:
-  int maximum_proposals = 50;
+  int maximum_proposals;
 
   class LookAheadProbability
   {
@@ -17,7 +19,7 @@ private:
     int maximum_proposals;
 
     std::vector<std::vector<double> > dp_array;
-    std::vector<double> point_probabilities;
+    std::vector<double> point_energies;
 
     void setTransitionProb(int start, int end, double probability);
 
@@ -27,20 +29,20 @@ private:
     {
       dp_array.reserve(maximum_proposals + 1);
 
-      point_probabilities.reserve(maximum_proposals + 1);
-      point_probabilities.push_back(initial_prob);
+      point_energies.reserve(maximum_proposals + 1);
+      point_energies.push_back(initial_prob);
     }
 
     double getTransitionCount()
     {
-      return point_probabilities.size() - 1;
+      return point_energies.size() - 1;
     }
 
     double getTransitionProb(int start, int end);
 
-    double getNextProbability(double point_prob)
+    double getNextProbability(double point_energy)
     {
-      point_probabilities.push_back(point_prob);
+      point_energies.push_back(point_energy);
       return getTransitionProb(0, getTransitionCount());
     }
  
@@ -53,8 +55,10 @@ private:
 public:
   LookAheadSampler(
       const Model<ParameterType>& model, 
-      const Hamiltonian<ParameterType>& hamiltonian)
-    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian) {}
+      const Hamiltonian<ParameterType>& hamiltonian,
+      int maximum_proposals = 10)
+    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian),
+      maximum_proposals(maximum_proposals) {}
 
   virtual void SimulateStep(ParameterType& parameter) override;
 
@@ -65,17 +69,17 @@ public:
 template<class ParameterType>
 void LookAheadSampler<ParameterType>::LookAheadProbability::setTransitionProb(int start, int end, double probability)
 {
-  if (dp_array.size() < start)
+  if (dp_array.size() <= start)
   {
     std::vector<double> row;
     row.reserve(end);
-    for (;dp_array.size() < start;)
+    for (;dp_array.size() <= start;)
       dp_array.push_back(row);
   }
 
-  if (dp_array.at(start).size() < end)
+  if (dp_array.at(start).size() <= end)
   {
-    for (;dp_array.at(start).size() < end;)
+    for (;dp_array.at(start).size() <= end;)
       dp_array.at(start).push_back(-1.);
   }
 
@@ -103,7 +107,7 @@ double LookAheadSampler<ParameterType>::LookAheadProbability::getTransitionProb(
       backwards_remaining_prob -= getTransitionProb(end, i);
     }
     backwards_remaining_prob *=
-      point_probabilities.at(end) / point_probabilities.at(start);
+      exp(point_energies.at(start) - point_energies.at(end));
 
     const double calculated_prob = std::max(0., 
       std::min(backwards_remaining_prob, forwards_remaining_prob));
@@ -120,25 +124,30 @@ void LookAheadSampler<ParameterType>::SimulateStep(ParameterType& parameter)
   double cutoff = this->getRandomUniform();
   double cumulative_probability = 0.;
 
+  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter);
+
   //Create dynamic programming object
   LookAheadProbability prob_calc(
     maximum_proposals,
-    exp(this->model.Energy(parameter)));
+    this->hamiltonian.Energy(parameter, momentum));
 
   ParameterType old_parameter = parameter;
-  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter);
 
   for (int i = 0; i < maximum_proposals; i++)
   {
     this->hamiltonian.GenerateStep(parameter, momentum);
   
     cumulative_probability += 
-      prob_calc.getNextProbability(exp(-this->hamiltonian.Energy(parameter, momentum)));
+      prob_calc.getNextProbability(this->hamiltonian.Energy(parameter, momentum));
 
     if (cumulative_probability > cutoff)
+    {
+      this->accept_count++;
       return;
+    }
   }
 
+  this->reject_count++;
   parameter = old_parameter;
   return;
 }
