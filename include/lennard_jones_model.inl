@@ -9,6 +9,11 @@ template<int particles>
 class LennardJonesParticles : public ParameterSet<particles * 2>
 {
 public:
+  LennardJonesParticles() {}
+  LennardJonesParticles(double in) : ParameterSet<particles * 2>(in) {}
+  LennardJonesParticles(const ParameterSet<particles * 2>& old) 
+    : ParameterSet<particles * 2>(old) {}
+
   Point getNthParticle(int n) const { return Point(&this->parameters.at(2 * n)); }
   void setNthParticle(int n, const Point& point)
   {
@@ -39,8 +44,8 @@ public:
 
   virtual parameter_type ParameterMapReals(const parameter_type& parameter) const override;
 private:
-  double CalculateEnergy(const parameter_type& parameters) const = 0;
-  parameter_type CalculateEnergyPartials(const parameter_type& parameters) const = 0;
+  double CalculateEnergy(const parameter_type& parameters) const;
+  parameter_type CalculateEnergyPartials(const parameter_type& parameters) const;
 
   double DistanceEnergy(const Point& a, const Point& b) const;
   LennardJonesParticles<2> DistanceEnergyPartials(const Point& a, const Point& b) const;
@@ -79,6 +84,7 @@ LennardJonesModel<particles>::ParameterMapReals(
   parameter_type out;
   for (int i = 0; i < particles; i++)
     out.setNthParticle(
+        i,
         ( ( out.getNthParticle(i) % bounds ) + bounds ) % bounds);
   return out;
 }

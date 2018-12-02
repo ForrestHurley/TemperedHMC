@@ -18,41 +18,43 @@
 
 int main()
 {
+  typedef LennardJonesModel<2> ModelType;
   //mean, variance
-  GaussianModel model = GaussianModel(0., 1.);
+  //GaussianModel model = GaussianModel(0., 1.);
 
-  LennardJonesModel<2> lj_model();
+  LennardJonesModel<2> model;
 
   const double step_length = 1.;
   const int path_length = 4;
   const int iterations = 2000;
 
   //model, step length, path steps
-  SimpleHamiltonian<GaussianModel::parameter_type> 
+  SimpleHamiltonian<ModelType::parameter_type> 
     hamiltonian(model, step_length, path_length);
-  SimpleHamiltonian<GaussianModel::parameter_type>
+  SimpleHamiltonian<ModelType::parameter_type>
     calib_hamiltonian(model, 0.01, 100);
 
   //model, step length, path steps, alpha ratio
-  TrajectoryTemperedHamiltonian<GaussianModel::parameter_type>
+  TrajectoryTemperedHamiltonian<ModelType::parameter_type>
     tempered_hamiltitonian(model, step_length, path_length, 1.05);
 
   //model, hamiltonian, temperature
-  HamiltonianMonteCarlo<GaussianModel::parameter_type>
+  HamiltonianMonteCarlo<ModelType::parameter_type>
     calib_mcmc(model, calib_hamiltonian, 1.);
   //HamiltonianMonteCarlo<GaussianModel::parameter_type>
   //  mcmc(model, hamiltonian, 1.);
 
-  SimpleHamiltonian<GaussianModel::parameter_type>
+  SimpleHamiltonian<ModelType::parameter_type>
     nuts_hamiltonian(model, step_length, 1);
-  NUTS<GaussianModel::parameter_type>
+  NUTS<ModelType::parameter_type>
     mcmc(model, nuts_hamiltonian);
 
   //model, hamiltonian, maximum steps
   //LookAheadSampler<GaussianModel::parameter_type>
   //  mcmc(model, hamiltonian, 5);
 
-  GaussianModel::parameter_type initial_state;
+  ModelType::parameter_type initial_state
+    = model.getRandomInitialState();
 
   std::cout << "Starting calibration iterations" << std::endl;
 

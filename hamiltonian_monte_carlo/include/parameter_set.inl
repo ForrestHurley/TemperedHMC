@@ -2,6 +2,7 @@
 #define PARAMETER_SET_INL
 
 #include <array>
+#include "math.h"
 
 //Do not inherit from this
 //Inherit from ParameterSet
@@ -36,7 +37,9 @@ public:
   ParameterSet<N>& operator%=(const ParameterSet<N>& other)
   {
     for(int i = 0; i < N; i++)
-      parameters.at(i) %= other.parameters.at(i);
+      parameters.at(i) = std::fmod(
+          parameters.at(i),
+          other.parameters.at(i));
 
     return *this;
   }

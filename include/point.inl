@@ -5,8 +5,14 @@
 
 class Point : public ParameterSet<2>
 {
+public:
   Point() {}
-  Point(double* array)
+  Point(double in)
+  {
+    parameters.at(0) = in;
+    parameters.at(1) = in;
+  }
+  Point(const double* array)
   {
     parameters.at(0) = *array;
     parameters.at(1) = *(array + 1);
