@@ -12,6 +12,11 @@ public:
     parameters.at(0) = in;
     parameters.at(1) = in;
   }
+  Point(double x, double y)
+  {
+    parameters.at(0) = x;
+    parameters.at(1) = y;
+  }
   Point(const double* array)
   {
     parameters.at(0) = *array;

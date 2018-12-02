@@ -4,6 +4,7 @@
 #include "parameter_set.inl"
 #include "model.inl"
 #include "point.inl"
+#include "poisson_generator.inl"
 
 template<int particles>
 class LennardJonesParticles : public ParameterSet<particles * 2>
@@ -43,6 +44,11 @@ public:
   using parameter_type = typename Model<LennardJonesParticles<particles> >::parameter_type;
 
   virtual parameter_type ParameterMapReals(const parameter_type& parameter) const override;
+
+  parameter_type getRandomInitialState() const override;
+
+  static std::vector<double> CalculateMeanSquaredDisplacement(
+      const std::vector<parameter_type>& in);
 private:
   double CalculateEnergy(const parameter_type& parameters) const;
   parameter_type CalculateEnergyPartials(const parameter_type& parameters) const;
@@ -226,5 +232,51 @@ double LennardJonesModel<particles>::PotentialPartials(double distance) const
   return partial;
 }
 
+template<int particles>
+typename LennardJonesModel<particles>::parameter_type
+LennardJonesModel<particles>::getRandomInitialState() const
+{
+  PoissonGenerator::DefaultPRNG generator;
 
+  parameter_type out;
+
+  //number of points, prng, test point count, fill circle/rectangle, minimum distance
+  std::vector<PoissonGenerator::sPoint> points = 
+        PoissonGenerator::GeneratePoissonPoints(
+      particles,
+      generator,
+      30,
+      false,
+      0.5);
+
+  int index = 0;
+  for (PoissonGenerator::sPoint point : points)
+  {
+    Point tmp_point = Point(point.x, point.y);
+    out.setNthParticle(index, tmp_point);
+    index++;
+  }
+
+  return out;
+}
+
+template<int particles>
+std::vector<double> LennardJonesModel<particles>::CalculateMeanSquaredDisplacement(
+    const std::vector<typename LennardJonesModel<particles>::parameter_type>& in)
+{
+  std::vector<double> out;
+
+  for (int i = 0; i < in.size(); i++)
+  {
+    double total_squared_displacement;
+    for (int j = 0; j < particles; j++)
+    {
+      total_squared_displacement +=
+        (in.at(0).getNthParticle(j) -
+         in.at(i).getNthParticle(j)).SquaredMagnitude();
+    }
+    out.push_back(total_squared_displacement / particles);
+  }
+  return out;
+}
 #endif

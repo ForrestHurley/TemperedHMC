@@ -15,6 +15,8 @@ public:
   parameter_type ParameterMapReals(const parameter_type& parameter) const
   { return parameter; }
 
+  parameter_type getRandomInitialState() const;
+
 private:
   double CalculateEnergy(const parameter_type& parameters) const override;
   parameter_type CalculateEnergyPartials(

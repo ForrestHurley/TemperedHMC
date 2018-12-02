@@ -51,6 +51,8 @@ public:
   {
     return partial_evaluations;
   }
+
+  virtual ParameterType getRandomInitialState() const = 0;
 };
 
 #endif

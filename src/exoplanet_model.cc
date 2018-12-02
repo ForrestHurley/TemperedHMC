@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <random>
+
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 {
   start_time = 0.;
@@ -66,6 +68,26 @@ double ExoplanetModel::PlanetaryMass(
   const double planet_mass = 
     inverse_n * power_ratio - stellar_mass;
   return planet_mass;
+}
+
+ExoplanetModel::parameter_type 
+ExoplanetModel::getRandomInitialState() const
+{
+  static thread_local std::random_device device;
+  static thread_local std::mt19937_64 twister(device());
+  static thread_local std::normal_distribution<double> normal(0., 1.);
+  static thread_local std::uniform_real_distribution<double> uniform(0., 1.);
+
+  parameter_type out;
+
+  out.setSemiMajorAxis(abs(normal(twister) * 0.5 + 1.));
+  out.setEccentricity(Logit(uniform(twister)));
+  out.setPeriapsisLongitude(uniform(twister));
+  out.setPeriod(abs(normal(twister) * 10. + 50.));
+  out.setPeriapsisTime(uniform(twister));
+  out.setVariance(abs(normal(twister) * 2. + 4.));
+  
+  return out;
 }
 
 double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& parameter) const

@@ -73,6 +73,8 @@ public:
   double PlanetaryMass(const parameter_type& parameter) const;
   virtual parameter_type ParameterMapReals(const parameter_type& parameter) const override;
 
+  parameter_type getRandomInitialState() const override;
+
 private:
   double CalculateEnergy(const parameter_type& parameter) const override;
   parameter_type CalculateEnergyPartials(const parameter_type& parameter) const override;
