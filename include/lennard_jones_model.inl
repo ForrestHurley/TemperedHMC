@@ -290,12 +290,12 @@ std::vector<double> LennardJonesModel<particles>::CalculateMeanSquaredDisplaceme
 
   for (int i = 0; i < in.size(); i++)
   {
-    double total_squared_displacement;
+    double total_squared_displacement = 0.;
     for (int j = 0; j < particles; j++)
     {
       total_squared_displacement +=
         (in.at(0).getNthParticle(j) -
-         in.at(i).getNthParticle(j)).SquaredMagnitude();
+         in.at(i).getNthParticle(j)).MagnitudeSquared();
     }
     out.push_back(total_squared_displacement / particles);
   }

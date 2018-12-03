@@ -128,13 +128,13 @@ void LookAheadSampler<ParameterType>::SimulateStep(ParameterType& parameter)
   double cutoff = this->getRandomUniform();
   double cumulative_probability = 0.;
 
-  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter, getTemperature());
+  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter, this->getTemperature());
 
   //Create dynamic programming object
   LookAheadProbability prob_calc(
     maximum_proposals,
     this->hamiltonian.Energy(parameter, momentum),
-    getTemperature());
+    this->getTemperature());
 
   ParameterType old_parameter = parameter;
 

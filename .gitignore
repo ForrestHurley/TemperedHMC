@@ -33,6 +33,7 @@
 
 # Folders
 build/
+release/
 
 #Swp files
 .*.swp

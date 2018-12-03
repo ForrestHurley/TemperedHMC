@@ -27,69 +27,90 @@ double lj_model(
     double tempering_factor = 1.,
     double x_size = 16.,
     double y_size = 16.,
-    bool verbose = true)
+    bool verbose = true,
+    unsigned int repeats = 1)
 {
-  LennardJonesModel<particles> model(x_size, y_size);
-
-  SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
-    hamiltonian(model, step_length, path_length);
-
-  LookAheadSampler<typename LennardJonesModel<particles>::parameter_type>
-    hmc(model, hamiltonian, temperature);
-
-  typename LennardJonesModel<particles>::parameter_type initial_state =
-    model.getRandomInitialState();
-
-  //Move initial state to something fairly stable
+  double average_displacement = 0.;
+  double average_energy = 0.;
+  double average_ess = 0.;
+  double average_acceptance_ratio = 0.;
+  for (int rep = 0; rep < repeats; rep++)
   {
+    LennardJonesModel<particles> model(x_size, y_size);
+
     SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
-      hamiltonian(model, 0.0001, 100);
-    HamiltonianMonteCarlo<typename LennardJonesModel<particles>::parameter_type>
+      hamiltonian(model, step_length, path_length);
+
+    LookAheadSampler<typename LennardJonesModel<particles>::parameter_type>
       hmc(model, hamiltonian, temperature);
 
-    hmc.SimulateNSteps(100, initial_state);
-    hmc.ClearHistory(); 
-  }
+    typename LennardJonesModel<particles>::parameter_type initial_state =
+      model.getRandomInitialState();
 
-  hmc.SimulateNSteps(calibration_iterations, initial_state);
-  std::vector<typename LennardJonesModel<particles>::parameter_type> calibration =
-    hmc.getSimulatedParameters(thinning_factor);
-  hmc.ClearHistory();
+    //Move initial state to something fairly stable
+    {
+      SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
+        hamiltonian(model, 0.0001, 100);
+      HamiltonianMonteCarlo<typename LennardJonesModel<particles>::parameter_type>
+        hmc(model, hamiltonian, temperature);
 
-  std::vector<double> energy_calibration, energy_results;
-  for (const typename LennardJonesModel<particles>::parameter_type& state : calibration)
-  {
-    energy_calibration.push_back(
-      model.Energy(state));
-  }
+      hmc.SimulateNSteps(100, initial_state);
+      hmc.ClearHistory(); 
+    }
 
-  hmc.SimulateNSteps(iterations, initial_state);
-  std::vector<typename LennardJonesModel<particles>::parameter_type> results =
-    hmc.getSimulatedParameters(thinning_factor);
+    hmc.SimulateNSteps(calibration_iterations, initial_state);
+    std::vector<typename LennardJonesModel<particles>::parameter_type> calibration =
+      hmc.getSimulatedParameters(thinning_factor);
+    hmc.ClearHistory();
 
-  for(const typename LennardJonesModel<particles>::parameter_type& state : results)
-  {
-    energy_results.push_back(
+    std::vector<double> energy_calibration, energy_results;
+    for (const typename LennardJonesModel<particles>::parameter_type& state : calibration)
+    {
+      energy_calibration.push_back(
         model.Energy(state));
+    }
+
+    hmc.SimulateNSteps(iterations, initial_state);
+    std::vector<typename LennardJonesModel<particles>::parameter_type> results =
+      hmc.getSimulatedParameters(thinning_factor);
+
+    for(const typename LennardJonesModel<particles>::parameter_type& state : results)
+    {
+      energy_results.push_back(
+          model.Energy(state));
+    }
+
+    double effective_sample_size =
+      MCMCDiagnostics::EffectiveSampleSize(energy_results, energy_calibration);
+
+    average_energy += MCMCDiagnostics::Mean(energy_results);
+
+    std::vector<double> displacements =
+      LennardJonesModel<particles>::CalculateMeanSquaredDisplacement(results);
+
+    average_displacement += displacements.back();
+    average_ess += effective_sample_size;
+    average_acceptance_ratio += hmc.getAcceptanceRatio();
+
   }
-
-  double effective_sample_size =
-    MCMCDiagnostics::EffectiveSampleSize(energy_results, energy_calibration);
-
-  double average_energy = MCMCDiagnostics::Mean(energy_results);
+  average_energy /= repeats;
+  average_displacement /= repeats;
+  average_ess /= repeats;
+  average_acceptance_ratio /= repeats;
 
   if (verbose)
-    std::cout << "T: " << temperature << " Average Energy: " << average_energy 
-    << " ESS: " << effective_sample_size << " Acceptance Ratio: " << hmc.getAcceptanceRatio() << std::endl;
-
+    std::cout << temperature << "," << average_energy 
+    << "," << average_ess << "," << average_acceptance_ratio
+    << "," << average_displacement << "," << repeats << std::endl;
   return average_energy;
 }
 
 int main()
 {
-  for (int i = 1; i < 10; i++)
+  std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  for (int i = 1; i < 40; i++)
   {
-    lj_model<16>(.01,5,500,500,2,i*0.1,1.,4.,3.,true);
+    lj_model<16>(.015,5,2000,2000,2,i * 0.05,1.,4.,4.,true, 5.);
   }
 
   /*
