@@ -31,9 +31,11 @@ public:
 
     hamiltonian.GenerateStep(parameter, momentum);
     
+    const double old_energy = hamiltonian.Energy(old_parameter, old_momentum);
+    const double new_energy = hamiltonian.Energy(parameter, momentum);
+
     double probability =
-      exp( (hamiltonian.Energy(old_parameter, old_momentum) - 
-          hamiltonian.Energy(parameter, momentum) ) / temperature); 
+      exp( (old_energy - new_energy ) / temperature); 
 
     if(this->getRandomUniform() < probability)
     {

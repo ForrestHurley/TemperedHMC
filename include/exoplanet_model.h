@@ -97,9 +97,9 @@ private:
   double PriorEnergy(const parameter_type& parameter) const;
   parameter_type PriorEnergyPartials(const parameter_type& parameter) const;
 
-  static constexpr double Logit(double in) { return log( in / ( 1. - in ) ); }
-  static constexpr double InvLogit(double in) { return exp( in ) / ( 1. + exp( in ) ); }
-  static constexpr double LogitDeriv(double in) { return 1. / ( in * ( 1. - in ) ); }
+  static double Logit(double in) { return log( in / ( 1. - in ) ); }
+  static double InvLogit(double in) { return exp( in ) / ( 1. + exp( in ) ); }
+  static double LogitDeriv(double in) { return 1. / ( in * ( 1. - in ) ); }
 
   virtual parameter_type RealMapPartials(
       const parameter_type& mapped_parameters,

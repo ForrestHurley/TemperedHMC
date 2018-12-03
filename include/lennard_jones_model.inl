@@ -91,7 +91,7 @@ LennardJonesModel<particles>::ParameterMapReals(
   for (int i = 0; i < particles; i++)
     out.setNthParticle(
         i,
-        ( ( out.getNthParticle(i) % bounds ) + bounds ) % bounds);
+        ( ( parameter.getNthParticle(i) % bounds ) + bounds ) % bounds);
   return out;
 }
 
@@ -166,7 +166,7 @@ Point LennardJonesModel<particles>::Displacement(
     const Point& a, const Point& b) const
 {
   const Point half_bounds = bounds * 0.5;
-  Point difference = ( ( a - b ) + bounds ) % bounds;
+  Point difference = ( ( ( a - b ) % bounds ) + bounds ) % bounds;
   difference = ( ( difference + half_bounds ) % bounds ) - half_bounds;
 
   return difference;
@@ -227,8 +227,8 @@ double LennardJonesModel<particles>::PotentialPartials(double distance) const
   const double recip_twelve = recip_six * recip_six;
 
   const double partial =
-    24. * potential_depth * recip_distance *
-    (recip_six - 2. * recip_twelve);
+    24. * potential_depth *
+    (recip_six - 2. * recip_twelve) / distance;
   return partial;
 }
 
@@ -236,28 +236,50 @@ template<int particles>
 typename LennardJonesModel<particles>::parameter_type
 LennardJonesModel<particles>::getRandomInitialState() const
 {
-  PoissonGenerator::DefaultPRNG generator;
+  parameter_type out;
+
+  int grid_size = ceil(sqrt(particles));
+
+  static thread_local std::random_device device;
+  static thread_local std::mt19937_64 twister(device());
+  static thread_local std::normal_distribution<double> normal(0., .05);
+
+  for (int i = 0; i < particles; i++)
+  {
+    out.setNthParticle(
+      i,
+      Point(i % grid_size, i / grid_size));//+
+      //Point(normal(twister), normal(twister)));
+  }
+
+  return out;
+
+  /*PoissonGenerator::DefaultPRNG generator;
 
   parameter_type out;
 
-  //number of points, prng, test point count, fill circle/rectangle, minimum distance
-  std::vector<PoissonGenerator::sPoint> points = 
-        PoissonGenerator::GeneratePoissonPoints(
-      particles,
-      generator,
-      30,
-      false,
-      0.5);
+  std::vector<PoissonGenerator::sPoint> points;
+  while (points.size() < particles)
+  {
+    //number of points, prng, test point count, fill circle/rectangle, minimum distance
+    points = PoissonGenerator::GeneratePoissonPoints(
+        particles * 2,
+        generator,
+        30,
+        false);
+  }
 
   int index = 0;
   for (PoissonGenerator::sPoint point : points)
   {
-    Point tmp_point = Point(point.x, point.y);
+    if (index == particles)
+      break;
+    Point tmp_point = Point(point.x * bounds.getX(), point.y * bounds.getY());
     out.setNthParticle(index, tmp_point);
     index++;
   }
 
-  return out;
+  return out;*/
 }
 
 template<int particles>

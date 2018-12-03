@@ -23,9 +23,12 @@ private:
 
     void setTransitionProb(int start, int end, double probability);
 
+    double temperature;
+
   public:
-    LookAheadProbability(int maximum_proposals, double initial_prob)
-      : maximum_proposals(maximum_proposals) 
+    LookAheadProbability(int maximum_proposals, double initial_prob, double temperature)
+      : maximum_proposals(maximum_proposals),
+      temperature(temperature)
     {
       dp_array.reserve(maximum_proposals + 1);
 
@@ -56,8 +59,9 @@ public:
   LookAheadSampler(
       const Model<ParameterType>& model, 
       const Hamiltonian<ParameterType>& hamiltonian,
+      double temperature = 1.,
       int maximum_proposals = 10)
-    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian),
+    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian, temperature),
       maximum_proposals(maximum_proposals) {}
 
   virtual void SimulateStep(ParameterType& parameter) override;
@@ -107,7 +111,7 @@ double LookAheadSampler<ParameterType>::LookAheadProbability::getTransitionProb(
       backwards_remaining_prob -= getTransitionProb(end, i);
     }
     backwards_remaining_prob *=
-      exp(point_energies.at(start) - point_energies.at(end));
+      exp( (point_energies.at(start) - point_energies.at(end)) / temperature);
 
     const double calculated_prob = std::max(0., 
       std::min(backwards_remaining_prob, forwards_remaining_prob));
@@ -124,12 +128,13 @@ void LookAheadSampler<ParameterType>::SimulateStep(ParameterType& parameter)
   double cutoff = this->getRandomUniform();
   double cumulative_probability = 0.;
 
-  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter);
+  ParameterType momentum = this->hamiltonian.RandomMomentum(parameter, getTemperature());
 
   //Create dynamic programming object
   LookAheadProbability prob_calc(
     maximum_proposals,
-    this->hamiltonian.Energy(parameter, momentum));
+    this->hamiltonian.Energy(parameter, momentum),
+    getTemperature());
 
   ParameterType old_parameter = parameter;
 

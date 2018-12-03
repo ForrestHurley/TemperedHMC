@@ -25,8 +25,8 @@ double lj_model(
     int thinning_factor = 2,
     double temperature = 1.,
     double tempering_factor = 1.,
-    double x_size = 4.,
-    double y_size = 4.,
+    double x_size = 16.,
+    double y_size = 16.,
     bool verbose = true)
 {
   LennardJonesModel<particles> model(x_size, y_size);
@@ -34,28 +34,39 @@ double lj_model(
   SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
     hamiltonian(model, step_length, path_length);
 
-  HamiltonianMonteCarlo<typename LennardJonesModel<particles>::parameter_type>
+  LookAheadSampler<typename LennardJonesModel<particles>::parameter_type>
     hmc(model, hamiltonian, temperature);
 
   typename LennardJonesModel<particles>::parameter_type initial_state =
     model.getRandomInitialState();
+
+  //Move initial state to something fairly stable
+  {
+    SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
+      hamiltonian(model, 0.0001, 100);
+    HamiltonianMonteCarlo<typename LennardJonesModel<particles>::parameter_type>
+      hmc(model, hamiltonian, temperature);
+
+    hmc.SimulateNSteps(100, initial_state);
+    hmc.ClearHistory(); 
+  }
 
   hmc.SimulateNSteps(calibration_iterations, initial_state);
   std::vector<typename LennardJonesModel<particles>::parameter_type> calibration =
     hmc.getSimulatedParameters(thinning_factor);
   hmc.ClearHistory();
 
+  std::vector<double> energy_calibration, energy_results;
+  for (const typename LennardJonesModel<particles>::parameter_type& state : calibration)
+  {
+    energy_calibration.push_back(
+      model.Energy(state));
+  }
+
   hmc.SimulateNSteps(iterations, initial_state);
   std::vector<typename LennardJonesModel<particles>::parameter_type> results =
     hmc.getSimulatedParameters(thinning_factor);
 
-  std::vector<double> energy_calibration, energy_results;
-  for(const typename LennardJonesModel<particles>::parameter_type& state : calibration)
-  {
-    std::cout << state.parameters.at(0) << std::endl;
-    energy_calibration.push_back(
-        model.Energy(state));
-  }
   for(const typename LennardJonesModel<particles>::parameter_type& state : results)
   {
     energy_results.push_back(
@@ -68,7 +79,8 @@ double lj_model(
   double average_energy = MCMCDiagnostics::Mean(energy_results);
 
   if (verbose)
-    std::cout << "T: " << temperature << " Average Energy: " << average_energy << " ESS: " << effective_sample_size << std::endl;
+    std::cout << "T: " << temperature << " Average Energy: " << average_energy 
+    << " ESS: " << effective_sample_size << " Acceptance Ratio: " << hmc.getAcceptanceRatio() << std::endl;
 
   return average_energy;
 }
@@ -77,7 +89,7 @@ int main()
 {
   for (int i = 1; i < 10; i++)
   {
-    lj_model<16>(.1,10,20,20,2,i,1.,4.,4.,true);
+    lj_model<16>(.01,5,500,500,2,i*0.1,1.,4.,3.,true);
   }
 
   /*

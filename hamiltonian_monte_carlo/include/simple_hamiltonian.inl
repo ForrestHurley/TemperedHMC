@@ -73,8 +73,9 @@ void SimpleHamiltonian<ParameterType>::LeapfrogStep(
   ParameterType& parameters,
   ParameterType& momenta) const
 {
-  momenta -=
-    this->model.EnergyPartials(parameters) * step_length / 2.;
+  const ParameterType energy_partials =
+    this->model.EnergyPartials(parameters);
+  momenta -= energy_partials * step_length / 2.;
 
   parameters +=
     momenta * step_length / getParameterMasses();
