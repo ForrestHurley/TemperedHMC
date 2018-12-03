@@ -15,6 +15,70 @@
 #include <iostream>
 
 #include <random>
+#include <string>
+
+double solar_model(
+    string file_name,
+    double step_length = .1, 
+    int path_length = 15, 
+    int iterations = 2000, 
+    int calibration_iterations = 20000, 
+    int thinning_factor = 2,
+    double tempering_factor = 1.,
+    bool verbose = true,
+    unsigned int repeats = 1)
+{
+  double average_ess = 0.;
+  double average_acceptance_ratio = 0.;
+  for (int rep = 0; rep < repeats; rep++)
+  {
+    ExoplanetModel model(file_name);
+
+    SimpleHamiltonian<ExoplanetModel::parameter_type>
+      hamiltonian(model, step_length, path_length);
+
+    NUTS<ExoplanetModel::parameter_type>
+      hmc(model, hamiltonian, temperature);
+
+    ExoplanetModel::parameter_type initial_state =
+      model.getRandomInitialState();
+
+    //Move initial state to something fairly stable
+    {
+      SimpleHamiltonian<ExoplanetModel::parameter_type>
+        hamiltonian(model, 0.0001, 100);
+      HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
+        hmc(model, hamiltonian, temperature);
+
+      hmc.SimulateNSteps(100, initial_state);
+      hmc.ClearHistory(); 
+    }
+
+    hmc.SimulateNSteps(calibration_iterations, initial_state);
+    std::vector<ExoplanetModel::parameter_type> calibration =
+      hmc.getSimulatedParameters(thinning_factor);
+    hmc.ClearHistory();
+
+    hmc.SimulateNSteps(iterations, initial_state);
+    std::vector<ExoplanetModel::parameter_type> results =
+      hmc.getSimulatedParameters(thinning_factor);
+
+    //loop over all parameters and summarize
+    //double effective_sample_size =
+    //  MCMCDiagnostics::EffectiveSampleSize();
+
+    average_ess += effective_sample_size;
+    average_acceptance_ratio += hmc.getAcceptanceRatio();
+
+  }
+  average_ess /= repeats;
+  average_acceptance_ratio /= repeats;
+
+  if (verbose)
+    std::cout << "," << average_ess << "," << average_acceptance_ratio 
+      << "," << repeats << std::endl;
+  return average_energy;
+}
 
 template<int particles>
 double lj_model(
@@ -41,7 +105,7 @@ double lj_model(
     SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
       hamiltonian(model, step_length, path_length);
 
-    LookAheadSampler<typename LennardJonesModel<particles>::parameter_type>
+    NUTS<typename LennardJonesModel<particles>::parameter_type>
       hmc(model, hamiltonian, temperature);
 
     typename LennardJonesModel<particles>::parameter_type initial_state =
@@ -107,14 +171,14 @@ double lj_model(
 
 int main()
 {
-  std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  /*std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
   for (int i = 1; i < 40; i++)
   {
-    lj_model<16>(.015,5,2000,2000,2,i * 0.05,1.,4.,4.,true, 5.);
-  }
+    lj_model<16>(.025,1,500,500,2,i,1.,4.,4.,true, 1.);
+  }*/
 
-  /*
-  //typedef LennardJonesModel<2> ModelType;
+  
+  /*//typedef LennardJonesModel<2> ModelType;
   typedef GaussianModel ModelType;
   //mean, variance
   GaussianModel model = GaussianModel(0., 1.);
@@ -138,13 +202,13 @@ int main()
   //model, hamiltonian, temperature
   HamiltonianMonteCarlo<ModelType::parameter_type>
     calib_mcmc(model, calib_hamiltonian, 1.);
-  HamiltonianMonteCarlo<GaussianModel::parameter_type>
-    mcmc(model, hamiltonian, 1.);
+  //HamiltonianMonteCarlo<GaussianModel::parameter_type>
+  //  mcmc(model, hamiltonian, 1.);
 
-  //SimpleHamiltonian<ModelType::parameter_type>
-  //  nuts_hamiltonian(model, step_length, 1);
-  //NUTS<ModelType::parameter_type>
-  //  mcmc(model, nuts_hamiltonian);
+  SimpleHamiltonian<ModelType::parameter_type>
+    nuts_hamiltonian(model, step_length, 1);
+  NUTS<ModelType::parameter_type>
+    mcmc(model, nuts_hamiltonian);
 
   //model, hamiltonian, maximum steps
   //LookAheadSampler<GaussianModel::parameter_type>

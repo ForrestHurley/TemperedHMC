@@ -29,8 +29,11 @@ private:
   double maximum_delta_energy = 1000;
 
 public:
-  NUTS(const Model<ParameterType>& model, const SimpleHamiltonian<ParameterType>& hamiltonian)
-    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian)
+  NUTS(
+      const Model<ParameterType>& model, 
+      const SimpleHamiltonian<ParameterType>& hamiltonian,
+      double temperature = 1.)
+    : HamiltonianMonteCarlo<ParameterType>(model, hamiltonian, temperature)
   {
     assert(hamiltonian.getPathLength() == 1);
   }
@@ -68,8 +71,8 @@ typename NUTS<ParameterType>::TreeReturn NUTS<ParameterType>::BuildTree(
 
     const double energy = this->hamiltonian.Energy(tmp_parameter, tmp_momentum);
 
-    out.count = (cutoff <= exp(-energy));
-    out.safe = (cutoff < exp(-energy + maximum_delta_energy));
+    out.count = (1. < exp(cutoff - energy));
+    out.safe = (1. < exp(cutoff - energy + maximum_delta_energy));
 
     return out;
   }
@@ -129,7 +132,7 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
 
   const double initial_energy = this->hamiltonian.Energy(parameter, momentum);
   double initial_probability = exp(-initial_energy);
-  double cutoff = this->getRandomUniform() * initial_probability;  
+  double cutoff = initial_energy - log(this->getRandomUniform());  
 
   TreeReturn working_tree;
   working_tree.left_parameter = parameter;
@@ -142,7 +145,7 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
 
   bool made_step = false;
 
-  unsigned int max_iters = 50000;
+  unsigned int max_iters = 10;
   unsigned int height = 0;
   while (working_tree.safe == true & height < max_iters)
   {
