@@ -17,8 +17,8 @@
 #include <random>
 #include <string>
 
-double solar_model(
-    string file_name,
+ExoplanetModel::parameter_type solar_model(
+    std::string file_name,
     double step_length = .1, 
     int path_length = 15, 
     int iterations = 2000, 
@@ -28,7 +28,9 @@ double solar_model(
     bool verbose = true,
     unsigned int repeats = 1)
 {
-  double average_ess = 0.;
+  ExoplanetModel::parameter_type average_ess;
+  std::vector<ExoplanetModel::parameter_type> means;
+  std::vector<ExoplanetModel::parameter_type> variances;
   double average_acceptance_ratio = 0.;
   for (int rep = 0; rep < repeats; rep++)
   {
@@ -38,7 +40,7 @@ double solar_model(
       hamiltonian(model, step_length, path_length);
 
     NUTS<ExoplanetModel::parameter_type>
-      hmc(model, hamiltonian, temperature);
+      hmc(model, hamiltonian);
 
     ExoplanetModel::parameter_type initial_state =
       model.getRandomInitialState();
@@ -48,7 +50,7 @@ double solar_model(
       SimpleHamiltonian<ExoplanetModel::parameter_type>
         hamiltonian(model, 0.0001, 100);
       HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
-        hmc(model, hamiltonian, temperature);
+        hmc(model, hamiltonian);
 
       hmc.SimulateNSteps(100, initial_state);
       hmc.ClearHistory(); 
@@ -60,10 +62,27 @@ double solar_model(
     hmc.ClearHistory();
 
     hmc.SimulateNSteps(iterations, initial_state);
-    std::vector<ExoplanetModel::parameter_type> results =
-      hmc.getSimulatedParameters(thinning_factor);
+    //std::vector<ExoplanetModel::parameter_type> results =
+    //  hmc.getSimulatedParameters(thinning_factor);
 
     //loop over all parameters and summarize
+    ExoplanetModel::parameter_type effective_sample_size;
+    ExoplanetModel::parameter_type mean;
+    ExoplanetModel::parameter_type variance;
+    for (int i = 0; i < effective_sample_size.dimension; i++)
+    {
+      mean.parameters.at(i) =
+        MCMCDiagnostics::Mean(
+            hmc.getSimulatedParameters(thinning_factor, i));
+      variance.parameters.at(i) =
+        MCMCDiagnostics::Variance(
+            hmc.getSimulatedParameters(thinning_factor, i),
+            mean.parameters.at(i));
+      effective_sample_size.parameters.at(i) = 
+        MCMCDiagnostics::EffectiveSampleSize(
+            hmc.getSimulatedParameters(thinning_factor, i),
+            hmc.getSimulatedParameters(thinning_factor, i, calibration));
+    }
     //double effective_sample_size =
     //  MCMCDiagnostics::EffectiveSampleSize();
 
@@ -74,10 +93,26 @@ double solar_model(
   average_ess /= repeats;
   average_acceptance_ratio /= repeats;
 
+  ExoplanetModel::parameter_type pooled_variance;
+  for (const ExoplanetModel::parameter_type& state : variances)
+    pooled_variance += state;
+  pooled_variance /= variances.size();
+
+  ExoplanetModel::parameter_type grand_mean;
+  for (const ExoplanetModel::parameter_type& state : means)
+    grand_mean += state;
+  grand_mean /= means.size();
+
+  ExoplanetModel::parameter_type grand_variance;
+  for (const ExoplanetModel::parameter_type& state : means)
+    grand_variance += (grand_mean - state) * (grand_mean - state);
+  grand_variance /= means.size() - 1;
+
   if (verbose)
     std::cout << "," << average_ess << "," << average_acceptance_ratio 
-      << "," << repeats << std::endl;
-  return average_energy;
+      << "," << repeats << "," << grand_mean << "," << grand_variance 
+      << "," << pooled_variance << std::endl;
+  return grand_mean;
 }
 
 template<int particles>
@@ -171,11 +206,21 @@ double lj_model(
 
 int main()
 {
-  /*std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
-  for (int i = 1; i < 40; i++)
+  //std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  /*for (int i = 1; i < 40; i++)
   {
     lj_model<16>(.025,1,500,500,2,i,1.,4.,4.,true, 1.);
   }*/
+
+  
+  std::string file_name = "exodata.txt";
+  //file name, step length, path length, iterations
+  //calibration iterations, thinning factor, tempering factor
+  //verbose, repeats
+  ExoplanetModel::parameter_type solar_model(
+      file_name, .005, 30, 
+      2000, 20000, 2,
+      1., true, 1);
 
   
   /*//typedef LennardJonesModel<2> ModelType;

@@ -202,6 +202,19 @@ public:
         (parameters.at(i) < 0);
     return out;
   }
+
+  template <int N2>
+  friend std::ostream& operator<<(std::ostream &os, const ParameterSet<N2>& out);
 };
+
+template<int N>
+std::ostream& operator<<(std::ostream &os, const ParameterSet<N>& out)
+{
+  for (int i = 0; i < N - 1; i++)
+    os << out.parameters.at(i) << ",";
+  os << out.parameters.at(N - 1);
+  return os;
+}
+
 
 #endif

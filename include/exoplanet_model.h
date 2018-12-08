@@ -15,6 +15,7 @@ class ExoplanetParameters : public ParameterSet<6>
 {
 public:
   ExoplanetParameters() {}
+  ExoplanetParameters(double val) : ParameterSet<6>(val) {}
   ExoplanetParameters(const ParameterSet<6>& old) : ParameterSet<6>(old) {}
 
   double& getSemiMajorAxis() { return parameters.at(0); }

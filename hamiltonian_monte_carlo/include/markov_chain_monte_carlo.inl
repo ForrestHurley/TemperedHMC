@@ -72,6 +72,22 @@ public:
     return out;
   }
 
+  static std::vector<double>
+    getSimulatedParameters(
+        int thinning_factor, int parameter_index,
+        const std::vector<ParameterType>& external_data)
+  {
+    std::vector<double> out;
+    out.reserve(external_data.size());
+
+    int remainder = external_data.size() % thinning_factor;
+
+    for (int i = remainder; i < external_data.size(); i+= thinning_factor)
+      out.push_back(external_data.at(i).parameters.at(parameter_index));
+
+    return out;
+  }
+
   void ClearHistory()
   {
     parameter_history = std::vector<ParameterType>();
