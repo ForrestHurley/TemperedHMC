@@ -5,10 +5,11 @@
 #include <sstream>
 
 #include <random>
+#include <limits>
 
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 {
-  start_time = 0.;
+  start_time = std::numeric_limits<double>::infinity();;
   for (std::vector<double> point : data_points)
   {
     assert(point.size() == 2);
@@ -26,26 +27,32 @@ ExoplanetModel::ExoplanetModel(std::string filename)
   std::string line;
   std::vector<std::vector<double> > data_points;
 
+  //throw out the header
+  std::getline(file, line);
+
+  if (!file.is_open())
+    std::cout << "File did not open!" << std::endl;
+
   while(std::getline(file, line))
   {
     std::vector<double> line_data;
     std::stringstream line_stream(line);
 
     double value;
-    while(line_stream >> value)
+    while(line_stream >> value && line_data.size() < 2)
     {
       line_data.push_back(value);
     }
     if (line_data.size() != 2)
     {
-      std::cerr << "Lines must have exactly two data points on them" << std:: endl;
+      std::cerr << "Lines must have at least two data points on them" << std:: endl;
       assert(false);
     }
 
     data_points.push_back(line_data);
   }
 
-  start_time = 0.;
+  start_time = std::numeric_limits<double>::infinity();
   for (std::vector<double> point : data_points)
   {
     this->data_points.push_back(

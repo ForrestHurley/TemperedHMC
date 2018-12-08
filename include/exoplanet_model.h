@@ -76,6 +76,8 @@ public:
 
   parameter_type getRandomInitialState() const override;
 
+  double getStartTime() const { return start_time; }
+
 private:
   double CalculateEnergy(const parameter_type& parameter) const override;
   parameter_type CalculateEnergyPartials(const parameter_type& parameter) const override;

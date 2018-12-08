@@ -34,37 +34,43 @@ ExoplanetModel::parameter_type solar_model(
   double average_acceptance_ratio = 0.;
   for (int rep = 0; rep < repeats; rep++)
   {
+    std::cout << "Starting rep " << rep << std::endl;
     ExoplanetModel model(file_name);
 
     SimpleHamiltonian<ExoplanetModel::parameter_type>
       hamiltonian(model, step_length, path_length);
 
-    NUTS<ExoplanetModel::parameter_type>
+    HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
       hmc(model, hamiltonian);
 
     ExoplanetModel::parameter_type initial_state =
       model.getRandomInitialState();
 
+    std::cout << "Start time: " << model.getStartTime() << std::endl;
+    std::cout << "Starting initial relaxation" << std::endl;
     //Move initial state to something fairly stable
     {
       SimpleHamiltonian<ExoplanetModel::parameter_type>
-        hamiltonian(model, 0.0001, 100);
+        hamiltonian(model, 0.00001, 40);
       HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
         hmc(model, hamiltonian);
 
-      hmc.SimulateNSteps(100, initial_state);
+      hmc.SimulateNSteps(100, initial_state, verbose);
       hmc.ClearHistory(); 
     }
 
-    hmc.SimulateNSteps(calibration_iterations, initial_state);
+    std::cout << "Starting calibration for ESS calculation" << std::endl;
+    hmc.SimulateNSteps(calibration_iterations, initial_state, verbose);
     std::vector<ExoplanetModel::parameter_type> calibration =
       hmc.getSimulatedParameters(thinning_factor);
     hmc.ClearHistory();
 
-    hmc.SimulateNSteps(iterations, initial_state);
+    std::cout << "Running main simulation" << std::endl;
+    hmc.SimulateNSteps(iterations, initial_state, verbose);
     //std::vector<ExoplanetModel::parameter_type> results =
     //  hmc.getSimulatedParameters(thinning_factor);
 
+    std::cout << "Calculating statistics" << std::endl;
     //loop over all parameters and summarize
     ExoplanetModel::parameter_type effective_sample_size;
     ExoplanetModel::parameter_type mean;
@@ -89,6 +95,9 @@ ExoplanetModel::parameter_type solar_model(
     average_ess += effective_sample_size;
     average_acceptance_ratio += hmc.getAcceptanceRatio();
 
+    means.push_back(mean);
+    variances.push_back(variance);
+
   }
   average_ess /= repeats;
   average_acceptance_ratio /= repeats;
@@ -108,8 +117,9 @@ ExoplanetModel::parameter_type solar_model(
     grand_variance += (grand_mean - state) * (grand_mean - state);
   grand_variance /= means.size() - 1;
 
+  std::cout << "Results: " << std::endl;
   if (verbose)
-    std::cout << "," << average_ess << "," << average_acceptance_ratio 
+    std::cout << average_ess << "," << average_acceptance_ratio 
       << "," << repeats << "," << grand_mean << "," << grand_variance 
       << "," << pooled_variance << std::endl;
   return grand_mean;
@@ -213,13 +223,13 @@ int main()
   }*/
 
   
-  std::string file_name = "exodata.txt";
+  std::string file_name = "51_pegasi_256.txt";
   //file name, step length, path length, iterations
   //calibration iterations, thinning factor, tempering factor
   //verbose, repeats
-  ExoplanetModel::parameter_type solar_model(
-      file_name, .005, 30, 
-      2000, 20000, 2,
+  solar_model(
+      file_name, .000001, 20, 
+      200, 200, 2,
       1., true, 1);
 
   
