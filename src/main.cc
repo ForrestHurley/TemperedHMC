@@ -40,7 +40,7 @@ ExoplanetModel::parameter_type solar_model(
     SimpleHamiltonian<ExoplanetModel::parameter_type>
       hamiltonian(model, step_length, path_length);
 
-    HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
+    NUTS<ExoplanetModel::parameter_type>
       hmc(model, hamiltonian);
 
     ExoplanetModel::parameter_type initial_state =
@@ -217,10 +217,10 @@ double lj_model(
 int main()
 {
   //std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
-  /*for (int i = 1; i < 40; i++)
-  {
-    lj_model<16>(.025,1,500,500,2,i,1.,4.,4.,true, 1.);
-  }*/
+  //for (int i = 1; i < 40; i++)
+  //{
+  //  lj_model<16>(.025,1,500,500,2,i,1.,4.,4.,true, 1.);
+  //}
 
   
   std::string file_name = "51_pegasi_256.txt";
@@ -228,7 +228,7 @@ int main()
   //calibration iterations, thinning factor, tempering factor
   //verbose, repeats
   solar_model(
-      file_name, .000001, 20, 
+      file_name, .01, 1, 
       200, 200, 2,
       1., true, 1);
 

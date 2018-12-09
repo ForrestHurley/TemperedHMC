@@ -11,7 +11,7 @@ static_assert(std::is_base_of<ParameterBase, ParameterType>::value, "Parameter t
 private:
   mutable int energy_evaluations = 0;
   mutable int partial_evaluations = 0;
-  const double numerical_interval = 1e-7;
+  const double numerical_interval = 1e-3;
 
   virtual double CalculateEnergy(const ParameterType& parameters) const = 0;
   virtual ParameterType CalculateEnergyPartials(const ParameterType& parameters) const = 0;
@@ -65,18 +65,35 @@ protected:
 
     for (int i = 0; i < parameter_type::dimension; i++)
     {
+      double energy = 0.;
       perturbed_parameter = parameter;
 
-      perturbed_parameter.parameters.at(i) -= 0.5 * numerical_interval;
-      const double old_energy =
+      perturbed_parameter.parameters.at(i) -= 3 * numerical_interval;
+      energy -=
         CalculateEnergy(perturbed_parameter);
 
       perturbed_parameter.parameters.at(i) += numerical_interval;
-      const double new_energy =
+      energy +=
+        9 * CalculateEnergy(perturbed_parameter);
+
+      perturbed_parameter.parameters.at(i) += numerical_interval;
+      energy -=
+        45 * CalculateEnergy(perturbed_parameter);
+
+      perturbed_parameter.parameters.at(i) += 2 * numerical_interval;
+      energy +=
+        45 * CalculateEnergy(perturbed_parameter);
+
+      perturbed_parameter.parameters.at(i) += numerical_interval;
+      energy -=
+        9 * CalculateEnergy(perturbed_parameter);
+
+      perturbed_parameter.parameters.at(i) += numerical_interval;
+      energy +=
         CalculateEnergy(perturbed_parameter);
 
       partial_estimates.parameters.at(i) =
-        (new_energy - old_energy) / numerical_interval;
+        energy / 60. / numerical_interval;
 
     }
 

@@ -59,6 +59,7 @@ ExoplanetModel::ExoplanetModel(std::string filename)
         RadialVelocity(point.at(0), point.at(1)));
     if (point.at(0) < start_time)
       start_time = point.at(0);
+    std::cout << point.at(0) << ", " << point.at(1) << std::endl;
   }
 }
 
@@ -90,9 +91,9 @@ ExoplanetModel::getRandomInitialState() const
   out.setSemiMajorAxis(abs(normal(twister) * 0.5 + 1.));
   out.setEccentricity(Logit(uniform(twister)));
   out.setPeriapsisLongitude(uniform(twister));
-  out.setPeriod(abs(normal(twister) * 10. + 50.));
+  out.setPeriod(normal(twister));
   out.setPeriapsisTime(uniform(twister));
-  out.setVariance(abs(normal(twister) * 2. + 4.));
+  out.setVariance(abs(normal(twister) * 2. + 1.));
   
   return out;
 }
@@ -100,6 +101,7 @@ ExoplanetModel::getRandomInitialState() const
 double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& parameter) const
 {
   double energy = PriorEnergy(parameter);
+  //std::cout << parameter << std::endl;
   
   for(RadialVelocity datum : data_points)
   {
@@ -379,6 +381,7 @@ ExoplanetModel::parameter_type ExoplanetModel::StellarYVelocityPartials(
 ExoplanetModel::parameter_type ExoplanetModel::ParameterMapReals(
     const ExoplanetModel::parameter_type& parameter) const
 {
+  std::cout << "Mapping: " << parameter << std::endl;
   parameter_type out;
 
   out.setSemiMajorAxis(
@@ -425,8 +428,8 @@ ExoplanetModel::parameter_type ExoplanetModel::RealMapPartials(
       ecc / ( ( 1. + ecc ) * ( 1. + ecc ) ) *
       partials.getEccentricity() );
 
-  std::cout << "|" << ecc << "," << partials.getEccentricity() << "," << 
-    reals.getEccentricity() << std::endl;
+  //std::cout << "|" << ecc << "," << partials.getEccentricity() << "," << 
+  //  reals.getEccentricity() << std::endl;
 
   reals.setPeriapsisLongitude(
       partials.getPeriapsisLongitude());
@@ -438,8 +441,8 @@ ExoplanetModel::parameter_type ExoplanetModel::RealMapPartials(
       partials.getPeriod() +
       tim / ( 1. + tim ) * per * ( 1. + 1. / ( 1. + tim ) ) *
       partials.getPeriapsisTime() );
-  std::cout << ":" << mapped_parameters.getPeriod() << "," <<
-    partials.getPeriod() << "," << reals.getPeriod() << std::endl;
+  //std::cout << ":" << mapped_parameters.getPeriod() << "," <<
+  //  partials.getPeriod() << "," << reals.getPeriod() << std::endl;
 
   reals.setPeriapsisTime(
       tim / ( ( 1 + tim) * (1 + tim) ) *

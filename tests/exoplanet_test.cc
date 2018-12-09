@@ -64,7 +64,37 @@ TEST(ExoplanetDerivativeTest, HalfValueParam)
   double interval = 1e-7;
   for (int i = 0; i < test_parameter.dimension; i++)
   {
-    ExoplanetModel::parameter_type perturbed_parameter =
+    double energy = 0.;
+    ExoplanetModel:: parameter_type
+      perturbed_parameter = test_parameter;
+
+    perturbed_parameter.parameters.at(i) -= 3 * interval;
+    energy -=
+      test_model.Energy(perturbed_parameter);
+
+    perturbed_parameter.parameters.at(i) += interval;
+    energy +=
+      9 * test_model.Energy(perturbed_parameter);
+
+    perturbed_parameter.parameters.at(i) += interval;
+    energy -=
+      45 * test_model.Energy(perturbed_parameter);
+
+    perturbed_parameter.parameters.at(i) += 2 * interval;
+    energy +=
+      45 * test_model.Energy(perturbed_parameter);
+
+    perturbed_parameter.parameters.at(i) += interval;
+    energy -=
+      9 * test_model.Energy(perturbed_parameter);
+
+    perturbed_parameter.parameters.at(i) += interval;
+    energy +=
+      test_model.Energy(perturbed_parameter);
+
+    partial_estimates.parameters.at(i) =
+      energy / 60. / interval;
+    /*ExoplanetModel::parameter_type perturbed_parameter =
       test_parameter;
 
     perturbed_parameter.parameters.at(i) -= 0.5 * interval;
@@ -77,7 +107,7 @@ TEST(ExoplanetDerivativeTest, HalfValueParam)
 
     partial_estimates.parameters.at(i) =
       (new_energy - old_energy) / interval;
-
+    */
     EXPECT_NEAR(
         partial_estimates.parameters.at(i),
         energy_partials.parameters.at(i),
