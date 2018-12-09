@@ -123,7 +123,9 @@ double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& par
 ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
   const ExoplanetModel::parameter_type& parameter) const
 {
-  parameter_type partials = PriorEnergyPartials(parameter);
+  return NumericalPartialEstimate(parameter);
+
+  /*parameter_type partials = PriorEnergyPartials(parameter);
 
   for(RadialVelocity datum : data_points)
   {
@@ -144,7 +146,7 @@ ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
     partials += datum_partials;
   }
 
-  return partials;
+  return partials;*/
 }
 
 double ExoplanetModel::ExpectedVelocity(
@@ -415,30 +417,37 @@ ExoplanetModel::parameter_type ExoplanetModel::RealMapPartials(
   parameter_type reals;
 
   reals.setSemiMajorAxis(
-      1. / mapped_parameters.getSemiMajorAxis() *
+      mapped_parameters.getSemiMajorAxis() *
       partials.getSemiMajorAxis() );
 
+  const double ecc = mapped_parameters.getEccentricity();
   reals.setEccentricity(
-      LogitDeriv(mapped_parameters.getEccentricity()) *
+      ecc / ( ( 1. + ecc ) * ( 1. + ecc ) ) *
       partials.getEccentricity() );
+
+  std::cout << "|" << ecc << "," << partials.getEccentricity() << "," << 
+    reals.getEccentricity() << std::endl;
 
   reals.setPeriapsisLongitude(
       partials.getPeriapsisLongitude());
 
+  const double per = mapped_parameters.getPeriod();
+  const double tim = mapped_parameters.getPeriapsisTime();
   reals.setPeriod(
-      1. / mapped_parameters.getPeriod() *
-      partials.getPeriod() );
+      mapped_parameters.getPeriod() *
+      partials.getPeriod() +
+      tim / ( 1. + tim ) * per * ( 1. + 1. / ( 1. + tim ) ) *
+      partials.getPeriapsisTime() );
+  std::cout << ":" << mapped_parameters.getPeriod() << "," <<
+    partials.getPeriod() << "," << reals.getPeriod() << std::endl;
 
   reals.setPeriapsisTime(
-      ( mapped_parameters.getPeriod() *
-        LogitDeriv(mapped_parameters.getPeriapsisTime()) *
-        partials.getPeriapsisTime() -
-        Logit(mapped_parameters.getPeriapsisTime()) *
-        partials.getPeriod() ) /
-      ( mapped_parameters.getPeriod() * mapped_parameters.getPeriod() ) );
+      tim / ( ( 1 + tim) * (1 + tim) ) *
+      mapped_parameters.getPeriod() *
+      partials.getPeriapsisTime());
 
   reals.setVariance(
-      1. / mapped_parameters.getVariance() *
+      mapped_parameters.getVariance() *
       partials.getVariance() );
 
   return reals;

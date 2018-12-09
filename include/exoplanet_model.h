@@ -107,6 +107,10 @@ private:
   virtual parameter_type RealMapPartials(
       const parameter_type& mapped_parameters,
       const parameter_type& partials) const override;
+
+  //Friend classes for unit testing
+  //friend class ExoplanetDerivativeTest_Zero_Test;
+  //friend class ExoplanetDerivativeTest_NinetyDegree_Test;
 };
 
 #endif 
