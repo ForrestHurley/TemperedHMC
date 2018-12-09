@@ -6,6 +6,7 @@
 
 #include <random>
 #include <limits>
+#include <iomanip>
 
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 {
@@ -59,7 +60,7 @@ ExoplanetModel::ExoplanetModel(std::string filename)
         RadialVelocity(point.at(0), point.at(1)));
     if (point.at(0) < start_time)
       start_time = point.at(0);
-    std::cout << point.at(0) << ", " << point.at(1) << std::endl;
+    //std::cout << point.at(0) << ", " << point.at(1) << std::endl;
   }
 }
 
@@ -119,15 +120,16 @@ double ExoplanetModel::CalculateEnergy(const ExoplanetModel::parameter_type& par
     energy += datum_energy;
   }
 
+  //std::cout << std::setprecision(9) << "E:" << energy << " | " << parameter << std::endl;
   return energy; 
 }
 
 ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
   const ExoplanetModel::parameter_type& parameter) const
 {
-  return NumericalPartialEstimate(parameter);
+  //return NumericalPartialEstimate(parameter);
 
-  /*parameter_type partials = PriorEnergyPartials(parameter);
+  parameter_type partials = PriorEnergyPartials(parameter);
 
   for(RadialVelocity datum : data_points)
   {
@@ -148,7 +150,7 @@ ExoplanetModel::parameter_type ExoplanetModel::CalculateEnergyPartials(
     partials += datum_partials;
   }
 
-  return partials;*/
+  return partials;
 }
 
 double ExoplanetModel::ExpectedVelocity(
@@ -381,7 +383,7 @@ ExoplanetModel::parameter_type ExoplanetModel::StellarYVelocityPartials(
 ExoplanetModel::parameter_type ExoplanetModel::ParameterMapReals(
     const ExoplanetModel::parameter_type& parameter) const
 {
-  std::cout << "Mapping: " << parameter << std::endl;
+  //std::cout << "Mapping: " << parameter << std::endl;
   parameter_type out;
 
   out.setSemiMajorAxis(

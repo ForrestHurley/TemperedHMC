@@ -36,12 +36,13 @@ public:
   ParameterType EnergyPartials(const ParameterType& parameters) const
   {
     partial_evaluations++;
-    ParameterType mapped_params = ParameterMapReals(
+    /*ParameterType mapped_params = ParameterMapReals(
       parameters);
 
     return RealMapPartials(
         mapped_params,
-        CalculateEnergyPartials(mapped_params));
+        CalculateEnergyPartials(mapped_params));*/
+    return NumericalPartialEstimate(parameters);
   }
 
   int getEnergyEvaluationCount() const
@@ -70,27 +71,33 @@ protected:
 
       perturbed_parameter.parameters.at(i) -= 3 * numerical_interval;
       energy -=
-        CalculateEnergy(perturbed_parameter);
+        CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       perturbed_parameter.parameters.at(i) += numerical_interval;
       energy +=
-        9 * CalculateEnergy(perturbed_parameter);
+        9 * CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       perturbed_parameter.parameters.at(i) += numerical_interval;
       energy -=
-        45 * CalculateEnergy(perturbed_parameter);
+        45 * CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       perturbed_parameter.parameters.at(i) += 2 * numerical_interval;
       energy +=
-        45 * CalculateEnergy(perturbed_parameter);
+        45 * CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       perturbed_parameter.parameters.at(i) += numerical_interval;
       energy -=
-        9 * CalculateEnergy(perturbed_parameter);
+        9 * CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       perturbed_parameter.parameters.at(i) += numerical_interval;
       energy +=
-        CalculateEnergy(perturbed_parameter);
+        CalculateEnergy(
+          ParameterMapReals(perturbed_parameter));
 
       partial_estimates.parameters.at(i) =
         energy / 60. / numerical_interval;

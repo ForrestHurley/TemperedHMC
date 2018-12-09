@@ -20,7 +20,7 @@ TEST(ExoplanetDerivativeTest, Zero)
 
   ExoplanetModel::parameter_type partial_estimates;
 
-  double interval = 1e-7;
+  double interval = 1e-3;
   for (int i = 0; i < test_parameter.dimension; i++)
   {
     ExoplanetModel::parameter_type perturbed_parameter =
