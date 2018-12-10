@@ -13,21 +13,29 @@
 
 #include <vector>
 #include <iostream>
+#include <iomanip>
+#include <fstream>
 
 #include <random>
 #include <string>
 
 ExoplanetModel::parameter_type solar_model(
     std::string file_name,
+    const ExoplanetModel::parameter_type& mass_matrix,
     double step_length = .1, 
     int path_length = 15, 
     int iterations = 2000, 
     int calibration_iterations = 20000, 
+    int burn_in = 200,
+    double burn_in_step = 20,
     int thinning_factor = 2,
     double tempering_factor = 1.,
     bool verbose = true,
     unsigned int repeats = 1)
 {
+  std::ofstream outfile("solar_model_sim.csv");
+  std::ofstream calib_outfile("solar_model_sim_calib.csv");
+
   ExoplanetModel::parameter_type average_ess;
   std::vector<ExoplanetModel::parameter_type> means;
   std::vector<ExoplanetModel::parameter_type> variances;
@@ -37,26 +45,30 @@ ExoplanetModel::parameter_type solar_model(
     std::cout << "Starting rep " << rep << std::endl;
     ExoplanetModel model(file_name);
 
-    SimpleHamiltonian<ExoplanetModel::parameter_type>
-      hamiltonian(model, step_length, path_length);
+    TrajectoryTemperedHamiltonian<ExoplanetModel::parameter_type>
+      hamiltonian(model, step_length, path_length, tempering_factor);
+    hamiltonian.setParameterMasses(mass_matrix);
 
     NUTS<ExoplanetModel::parameter_type>
       hmc(model, hamiltonian);
 
+    SimpleHamiltonian<ExoplanetModel::parameter_type>
+      burn_in_hamiltonian(model, burn_in_step, path_length);
+    burn_in_hamiltonian.setParameterMasses(mass_matrix);
+
+    NUTS<ExoplanetModel::parameter_type>
+      burn_in_hmc(model, burn_in_hamiltonian);
+
     ExoplanetModel::parameter_type initial_state =
       model.getRandomInitialState();
+    std::cout << "Initial state: " << initial_state << std::endl;
 
     std::cout << "Start time: " << model.getStartTime() << std::endl;
     std::cout << "Starting initial relaxation" << std::endl;
     //Move initial state to something fairly stable
     {
-      SimpleHamiltonian<ExoplanetModel::parameter_type>
-        hamiltonian(model, 0.00001, 40);
-      HamiltonianMonteCarlo<ExoplanetModel::parameter_type>
-        hmc(model, hamiltonian);
-
-      hmc.SimulateNSteps(100, initial_state, verbose);
-      hmc.ClearHistory(); 
+      burn_in_hmc.SimulateNSteps(burn_in, initial_state, verbose);
+      burn_in_hmc.ClearHistory(); 
     }
 
     std::cout << "Starting calibration for ESS calculation" << std::endl;
@@ -65,10 +77,16 @@ ExoplanetModel::parameter_type solar_model(
       hmc.getSimulatedParameters(thinning_factor);
     hmc.ClearHistory();
 
+    for (ExoplanetModel::parameter_type state : calibration)
+      calib_outfile << std::setprecision(13) << model.ParameterMapReals(state) << std::endl;
+
     std::cout << "Running main simulation" << std::endl;
     hmc.SimulateNSteps(iterations, initial_state, verbose);
     //std::vector<ExoplanetModel::parameter_type> results =
     //  hmc.getSimulatedParameters(thinning_factor);
+
+    for (ExoplanetModel::parameter_type state : hmc.getSimulatedParameters())
+      outfile << std::setprecision(13) << model.ParameterMapReals(state) << std::endl;
 
     std::cout << "Calculating statistics" << std::endl;
     //loop over all parameters and summarize
@@ -117,16 +135,18 @@ ExoplanetModel::parameter_type solar_model(
     grand_variance += (grand_mean - state) * (grand_mean - state);
   grand_variance /= means.size() - 1;
 
-  std::cout << "Results: " << std::endl;
+  std::cout << "Results: " << std::setprecision(6) << std::endl;
   if (verbose)
     std::cout << average_ess << "," << average_acceptance_ratio 
       << "," << repeats << "," << grand_mean << "," << grand_variance 
       << "," << pooled_variance << std::endl;
+
   return grand_mean;
 }
 
-template<int particles>
+template<int particles, class mcmc_type>
 double lj_model(
+    std::ofstream &outfile,
     double step_length = .1, 
     int path_length = 15, 
     int iterations = 2000, 
@@ -139,23 +159,21 @@ double lj_model(
     bool verbose = true,
     unsigned int repeats = 1)
 {
-  double average_displacement = 0.;
-  double average_energy = 0.;
-  double average_ess = 0.;
-  double average_acceptance_ratio = 0.;
   for (int rep = 0; rep < repeats; rep++)
   {
+    std::cout << "Starting rep " << rep << " with temp " << temperature << std::endl;
     LennardJonesModel<particles> model(x_size, y_size);
 
-    SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
-      hamiltonian(model, step_length, path_length);
+    TrajectoryTemperedHamiltonian<typename LennardJonesModel<particles>::parameter_type>
+      hamiltonian(model, step_length, path_length, tempering_factor);
 
-    NUTS<typename LennardJonesModel<particles>::parameter_type>
-      hmc(model, hamiltonian, temperature);
+    mcmc_type hmc(model, hamiltonian, temperature);
 
     typename LennardJonesModel<particles>::parameter_type initial_state =
       model.getRandomInitialState();
 
+    if(verbose)
+      std::cout << "Relaxing state" << std::endl;
     //Move initial state to something fairly stable
     {
       SimpleHamiltonian<typename LennardJonesModel<particles>::parameter_type>
@@ -163,11 +181,13 @@ double lj_model(
       HamiltonianMonteCarlo<typename LennardJonesModel<particles>::parameter_type>
         hmc(model, hamiltonian, temperature);
 
-      hmc.SimulateNSteps(100, initial_state);
+      hmc.SimulateNSteps(100, initial_state, verbose);
       hmc.ClearHistory(); 
     }
 
-    hmc.SimulateNSteps(calibration_iterations, initial_state);
+    if(verbose)
+      std::cout << "Calibrating" << std::endl;
+    hmc.SimulateNSteps(calibration_iterations, initial_state, verbose);
     std::vector<typename LennardJonesModel<particles>::parameter_type> calibration =
       hmc.getSimulatedParameters(thinning_factor);
     hmc.ClearHistory();
@@ -179,7 +199,9 @@ double lj_model(
         model.Energy(state));
     }
 
-    hmc.SimulateNSteps(iterations, initial_state);
+    if(verbose)
+      std::cout << "Running main simulation" << std::endl;
+    hmc.SimulateNSteps(iterations, initial_state, verbose);
     std::vector<typename LennardJonesModel<particles>::parameter_type> results =
       hmc.getSimulatedParameters(thinning_factor);
 
@@ -192,45 +214,81 @@ double lj_model(
     double effective_sample_size =
       MCMCDiagnostics::EffectiveSampleSize(energy_results, energy_calibration);
 
-    average_energy += MCMCDiagnostics::Mean(energy_results);
+    double energy = MCMCDiagnostics::Mean(energy_results);
 
     std::vector<double> displacements =
       LennardJonesModel<particles>::CalculateMeanSquaredDisplacement(results);
 
-    average_displacement += displacements.back();
-    average_ess += effective_sample_size;
-    average_acceptance_ratio += hmc.getAcceptanceRatio();
-
+    outfile << temperature << "," << energy 
+    << "," << effective_sample_size << "," << hmc.getAcceptanceRatio()
+    << "," << displacements.back() << std::endl;
   }
-  average_energy /= repeats;
-  average_displacement /= repeats;
-  average_ess /= repeats;
-  average_acceptance_ratio /= repeats;
-
-  if (verbose)
-    std::cout << temperature << "," << average_energy 
-    << "," << average_ess << "," << average_acceptance_ratio
-    << "," << average_displacement << "," << repeats << std::endl;
-  return average_energy;
+  return 0.;
 }
 
 int main()
 {
-  //std::cout << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
-  //for (int i = 1; i < 40; i++)
-  //{
-  //  lj_model<16>(.025,1,500,500,2,i,1.,4.,4.,true, 1.);
-  //}
+  /*std::cout << "Starting Look Ahead" << std::endl;
+  {
+  std::ofstream outfile("lennard_jones_out_look_ahead_std_temp_long.csv");
+  outfile << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  for (int i = 1; i < 60; i++)
+  {
+  //step length, path length, iterations,
+  //calibration iterations, thinning factor,
+  //temperature, tempering factor, x size, y size,
+  //verbose, repeats
+    lj_model<16, LookAheadSampler<LennardJonesModel<16>::parameter_type> >(
+        outfile,.001,10,16000,500,2,i * 0.25,1.,4.,4.,false, 30.);
+  }
+  }*/
 
+  /*std::cout << "Starting Look Ahead with tempering" << std::endl;
+  {
+  std::ofstream outfile("lennard_jones_out_look_ahead_tempered_low_temp_long.csv");
+  outfile << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  for (int i = 1; i < 60; i++)
+  {
+  //step length, path length, iterations,
+  //calibration iterations, thinning factor,
+  //temperature, tempering factor, x size, y size,
+  //verbose, repeats
+    lj_model<16, LookAheadSampler<LennardJonesModel<16>::parameter_type> >(
+        outfile,.001,10,16000,500,2,i * 0.05,1.05,4.,4.,false, 30.);
+  }
+  }*/
+
+  std::cout << "Starting No U Turn" << std::endl;
+  {
+  std::ofstream outfile("lennard_jones_out_no_u_low_temp_long.csv");
+  outfile << "T,E,ESS,Acceptance Ratio,Displacement Squared,Samples" << std::endl;
+  for (int i = 1; i < 60; i++)
+  {
+  //step length, path length, iterations,
+  //calibration iterations, thinning factor,
+  //temperature, tempering factor, x size, y size,
+  //verbose, repeats
+    lj_model<16, NUTS<LennardJonesModel<16>::parameter_type> >(
+        outfile,.025,1,16000,500,2,i * 0.05,1.,4.,4.,false, 30.);
+  }
+  }
   
-  std::string file_name = "51_pegasi_256.txt";
+  /*std::string file_name = "51_pegasi_256.txt";
+  ExoplanetModel::parameter_type mass_matrix;
+  mass_matrix.parameters.at(0) = 40;
+  mass_matrix.parameters.at(1) = 1000;
+  mass_matrix.parameters.at(2) = 20;
+  mass_matrix.parameters.at(3) = 0.5;
+  mass_matrix.parameters.at(4) = 10;
+  mass_matrix.parameters.at(5) = 0.05;
+
   //file name, step length, path length, iterations
-  //calibration iterations, thinning factor, tempering factor
+  //calibration iterations, burn in, burn in step, thinning factor, tempering factor
   //verbose, repeats
   solar_model(
-      file_name, .01, 1, 
-      200, 200, 2,
-      1., true, 1);
+      file_name, mass_matrix, .0000025, 8, 
+      20000, 4000, 200, 0.0000025, 1,
+      1.1, true, 1);*/
 
   
   /*//typedef LennardJonesModel<2> ModelType;

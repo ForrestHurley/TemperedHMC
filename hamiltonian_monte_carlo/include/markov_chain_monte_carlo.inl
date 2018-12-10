@@ -30,7 +30,7 @@ public:
 
   virtual void SimulateStep(ParameterType& parameter) = 0;
 
-  void SimulateNSteps(unsigned int steps, ParameterType parameter, bool verbose = false)
+  void SimulateNSteps(unsigned int steps, ParameterType& parameter, bool verbose = false)
   {
     parameter_history.clear();
     parameter_history.reserve(steps);
@@ -39,7 +39,7 @@ public:
     {
       SimulateStep(parameter);
       parameter_history.push_back(parameter);
-      if (verbose)
+      if (verbose && i % 10 == 0)
       {
         std::cout << "\rCompleting step " << i << " of " << steps;
         std::cout << std::flush;

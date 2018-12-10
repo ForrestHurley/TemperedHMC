@@ -145,7 +145,7 @@ void NUTS<ParameterType>::SimulateStep(ParameterType& parameter)
 
   bool made_step = false;
 
-  unsigned int max_iters = 10;
+  unsigned int max_iters = 4;
   unsigned int height = 0;
   while (working_tree.safe == true & height < max_iters)
   {

@@ -11,7 +11,8 @@ static_assert(std::is_base_of<ParameterBase, ParameterType>::value, "Parameter t
 private:
   mutable int energy_evaluations = 0;
   mutable int partial_evaluations = 0;
-  const double numerical_interval = 1e-3;
+  const double numerical_interval = 1e-5;
+  const bool numerical_integration;
 
   virtual double CalculateEnergy(const ParameterType& parameters) const = 0;
   virtual ParameterType CalculateEnergyPartials(const ParameterType& parameters) const = 0;
@@ -20,7 +21,8 @@ private:
       const ParameterType& mapped_parameters,
       const ParameterType& partials) const = 0;
 public:
-  explicit Model() {}
+  explicit Model(bool numerical_integration = false) : 
+    numerical_integration(numerical_integration) {}
   virtual ~Model() {}
 
   typedef ParameterType parameter_type;
@@ -36,13 +38,14 @@ public:
   ParameterType EnergyPartials(const ParameterType& parameters) const
   {
     partial_evaluations++;
-    /*ParameterType mapped_params = ParameterMapReals(
+    if (numerical_integration)
+      return NumericalPartialEstimate(parameters);
+    ParameterType mapped_params = ParameterMapReals(
       parameters);
 
     return RealMapPartials(
         mapped_params,
-        CalculateEnergyPartials(mapped_params));*/
-    return NumericalPartialEstimate(parameters);
+        CalculateEnergyPartials(mapped_params));
   }
 
   int getEnergyEvaluationCount() const

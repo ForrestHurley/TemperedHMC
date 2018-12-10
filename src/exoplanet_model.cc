@@ -9,6 +9,7 @@
 #include <iomanip>
 
 ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
+  : Model<ExoplanetModel::parameter_type>(true)
 {
   start_time = std::numeric_limits<double>::infinity();;
   for (std::vector<double> point : data_points)
@@ -23,6 +24,7 @@ ExoplanetModel::ExoplanetModel(std::vector<std::vector<double> > data_points)
 }
 
 ExoplanetModel::ExoplanetModel(std::string filename)
+  : Model<ExoplanetModel::parameter_type>(true)
 {
   std::ifstream file(filename);
   std::string line;
@@ -89,12 +91,12 @@ ExoplanetModel::getRandomInitialState() const
 
   parameter_type out;
 
-  out.setSemiMajorAxis(abs(normal(twister) * 0.5 + 1.));
-  out.setEccentricity(Logit(uniform(twister)));
-  out.setPeriapsisLongitude(uniform(twister));
-  out.setPeriod(normal(twister));
-  out.setPeriapsisTime(uniform(twister));
-  out.setVariance(abs(normal(twister) * 2. + 1.));
+  out.setSemiMajorAxis(log(abs(normal(twister) * 0.2 + 1.)));
+  out.setEccentricity(Logit(uniform(twister) * 0.1));
+  out.setPeriapsisLongitude(uniform(twister) * 2 * 3.14159);
+  out.setPeriod(log(abs(normal(twister) * 2. + 4.)));
+  out.setPeriapsisTime(Logit(uniform(twister)));
+  out.setVariance(log(abs(normal(twister) * 2. + 10.)));
   
   return out;
 }
